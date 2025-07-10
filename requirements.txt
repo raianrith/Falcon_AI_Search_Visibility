@@ -1,0 +1,7 @@
+streamlit
+openai
+google.generativeai
+re
+pandas
+time
+os
