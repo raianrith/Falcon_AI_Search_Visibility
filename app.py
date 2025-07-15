@@ -111,12 +111,50 @@ competitors = [
 ]
 
 # ========== STREAMLIT UI ==========
-st.title("🔍 Falcon Structures AI Powered LLM Search Visibility Tool")
+import streamlit as st
+
+# ─── INJECT CSS ───────────────────────────────────────────────────────────────
 st.markdown(
-    "Paste multiple search queries (one per line) and compare answers from "
-    "OpenAI, Gemini, and Perplexity. Add `-- Provide sources where you are "
-    "extracting information from in this format - 'https?://\\S+' --` to the end of each query."
+    """
+    <style>
+    /* Center all H1 and paragraph tags */
+    h1, p.centered {
+        text-align: center;
+    }
+    /* Style the textarea */
+    .stTextArea>div>div>textarea {
+        border: 2px solid #4CAF50 !important;
+        border-radius: 8px !important;
+        padding: 12px !important;
+        font-size: 16px !important;
+    }
+    /* Optionally give the whole page a light background */
+    .stApp {
+        background-color: #f9f9f9;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
 )
+
+# ─── CENTERED TITLE & TEXT ─────────────────────────────────────────────────
+st.markdown("<h1>🔍 Falcon Structures AI Powered LLM Search Visibility Tool</h1>", unsafe_allow_html=True)
+st.markdown(
+    "<p class='centered'>Paste multiple search queries (one per line) and compare answers from OpenAI, Gemini, and Perplexity.</p>",
+    unsafe_allow_html=True
+)
+st.markdown(
+    "<p class='centered'>Add <code>-- Provide sources where you are extracting information from in this format - 'https?://\\S+'</code> to the end of each query.</p>",
+    unsafe_allow_html=True
+)
+
+# ─── NICED‑UP TEXTAREA ────────────────────────────────────────────────────────
+queries_input = st.text_area(
+    "",  # label handled by our centered text above
+    height=150,
+    placeholder="e.g. What companies provide modular container offices in the US? -- Provide sources where you are extracting information from in this format - 'https?://\\S+'"
+)
+
 
 queries_input = st.text_area(
     "Enter your queries here:",
