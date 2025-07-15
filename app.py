@@ -117,20 +117,38 @@ import streamlit as st
 st.markdown(
     """
     <style>
-    /* Center all H1 and paragraph tags */
+    /* ── App background & text ───────────────────────────────────────── */
+    /* Target the main view container */
+    [data-testid="stAppViewContainer"] {
+        background-color: #000 !important;
+    }
+    /* Force white text everywhere in the main view */
+    [data-testid="stAppViewContainer"], 
+    [data-testid="stAppViewContainer"] * {
+        color: #fff !important;
+    }
+
+    /* ── Centered headings & paragraphs ─────────────────────────────── */
     h1, p.centered {
         text-align: center;
     }
-    /* Style the textarea */
+
+    /* ── Styled code snippets in your centered paragraph ────────────── */
+    p.centered code {
+        background-color: #222;
+        color: #0f0;
+        padding: 2px 4px;
+        border-radius: 4px;
+    }
+
+    /* ── Textarea styling ───────────────────────────────────────────── */
     .stTextArea>div>div>textarea {
+        background-color: #121212 !important;
+        color: #fff !important;
         border: 2px solid #4CAF50 !important;
         border-radius: 8px !important;
         padding: 12px !important;
         font-size: 16px !important;
-    }
-    /* Optionally give the whole page a light background */
-    .stApp {
-        background-color: #f9f9f9;
     }
     </style>
     """,
@@ -144,16 +162,20 @@ st.markdown(
     unsafe_allow_html=True
 )
 st.markdown(
-    "<p class='centered'> <code> Add Provide sources where you are extracting information from in this format - 'https?://\\S+' to the end of each query.</code> </p>",
+    "<p class='centered'><code>-- Provide sources where you are extracting information from in this format - 'https?://\\S+' --</code></p>",
     unsafe_allow_html=True
 )
 
 # ─── NICED‑UP TEXTAREA ────────────────────────────────────────────────────────
 queries_input = st.text_area(
-    "Enter your queries here:",  # label handled by our centered text above
+    "Enter your queries here:",  
     height=150,
-    placeholder="e.g. What companies provide modular container offices in the US? Provide sources where you are extracting information from in this format - 'https?://\\S+'"
+    placeholder=(
+        "e.g. What companies provide modular container offices in the US? "
+        "-- Provide sources where you are extracting information from in this format - 'https?://\\S+'"
+    )
 )
+
 
 if st.button("Run Analysis"):
     queries = [q.strip() for q in queries_input.splitlines() if q.strip()]
