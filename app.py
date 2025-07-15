@@ -6,19 +6,43 @@ import pandas as pd
 import time
 import os
 
-# ========== CONFIGURATION ==========
-# API keys: store in Streamlit secrets or environment variables
+# ========== SIDEBAR: MODEL SELECTION ==========
+st.sidebar.title("🛠️ Model Configuration")
+
+# OpenAI model options
+openai_choices = [
+    "gpt-4", "gpt-4o", "gpt-3.5-turbo", "gpt-3.5-turbo-16k"
+]
+openai_model = st.sidebar.selectbox(
+    "OpenAI model",
+    openai_choices,
+    index=openai_choices.index("gpt-4")
+)
+
+# Gemini model options
+gemini_choices = [
+    "gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.0", "gemini-embed"
+]
+gemini_model_name = st.sidebar.selectbox(
+    "Gemini model",
+    gemini_choices,
+    index=gemini_choices.index("gemini-2.5-flash")
+)
+
+# Perplexity model options
+perplexity_choices = [
+    "sonar-pro", "perplexity-standard", "perplexity-raw"
+]
+perplexity_model_name = st.sidebar.selectbox(
+    "Perplexity model",
+    perplexity_choices,
+    index=perplexity_choices.index("sonar-pro")
+)
+
+# ========== CONFIGURATION: API KEYS ==========
 openai_api_key = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
 gemini_api_key = st.secrets.get("gemini_api_key") or os.getenv("GEMINI_API_KEY")
 perplexity_api_key = st.secrets.get("perplexity_api_key") or os.getenv("PERPLEXITY_API_KEY")
-
-# Model names
-openai_model = st.secrets.get("openai_model", "gpt-4")
-gemini_model_name = st.secrets.get("gemini_model_name", "gemini-2.5-flash")
-perplexity_model_name = st.secrets.get("perplexity_model_name", "sonar-pro")
-
-# Competitor list
-competitors = ["ROXBOX Containers", "Wilmot Modular", "Pac-Van", "BMarko Structures", "Giant Containers", "XCaliber Container", "Conexwest", "Mobile Modular Portable Storage", "WillScot"]
 
 # ========== CLIENT INITIALIZATION ==========
 openai_client = OpenAI(api_key=openai_api_key)
@@ -31,6 +55,7 @@ perplexity_client = OpenAI(
     base_url="https://api.perplexity.ai"
 )
 
+# ========== SYSTEM PROMPT ==========
 SYSTEM_PROMPT = (
     "You are a marketing agent trying to analyze search visibility. "
     "I am passing a few queries. You need to give me a response that you would "
@@ -52,7 +77,6 @@ def get_openai_response(query: str) -> str:
         st.error(f"OpenAI error for query '{query}': {e}")
         return "ERROR"
 
-
 def get_gemini_response(query: str) -> str:
     try:
         response = gemini_model.generate_content(query)
@@ -60,7 +84,6 @@ def get_gemini_response(query: str) -> str:
     except Exception as e:
         st.error(f"Gemini error for query '{query}': {e}")
         return "ERROR"
-
 
 def get_perplexity_response(query: str) -> str:
     try:
@@ -76,20 +99,32 @@ def get_perplexity_response(query: str) -> str:
         st.error(f"Perplexity error for query '{query}': {e}")
         return "ERROR"
 
-# ========== HELPER ==========
+# ========== HELPER FUNCTION ==========
 def extract_links(text: str) -> list:
     return re.findall(r'https?://\S+', text)
+
+# ========== COMPETITOR LIST ==========
+competitors = [
+    "ROXBOX Containers", "Wilmot Modular", "Pac-Van", "BMarko Structures",
+    "Giant Containers", "XCaliber Container", "Conexwest",
+    "Mobile Modular Portable Storage", "WillScot"
+]
 
 # ========== STREAMLIT UI ==========
 st.title("🔍 Falcon Structures AI Powered LLM Search Visibility Tool")
 st.markdown(
-    "Paste multiple search queries (one per line) and compare answers from ChatGPT, Gemini, and Perplexity.  Add -- Provide sources where you are extracting information from in this format - 'https?://\\S+' -- to the end of each querry."
+    "Paste multiple search queries (one per line) and compare answers from "
+    "OpenAI, Gemini, and Perplexity. Add `-- Provide sources where you are "
+    "extracting information from in this format - 'https?://\\S+' --` to the end of each query."
 )
 
 queries_input = st.text_area(
     "Enter your queries here:",
     height=150,
-    placeholder="What companies provide modular container offices in the US? Provide sources where you are extracting information from in this format - 'https?://\\S+'"
+    placeholder=(
+        "What companies provide modular container offices in the US? "
+        "Provide sources where you are extracting information from in this format - 'https?://\\S+'"
+    )
 )
 
 if st.button("Run Analysis"):
@@ -106,15 +141,14 @@ if st.button("Run Analysis"):
                     ("Perplexity", get_perplexity_response)
                 ]:
                     text = func(query)
-                    # metrics
                     wc = len(text.split())
                     falcon_flag = "Y" if re.search(r'\bfalcon\b|\bfalconstructures\b', text, re.IGNORECASE) else "N"
                     cite_flag = "Y" if re.search(r'https?://|\[\d+\]', text) else "N"
                     found = [c for c in competitors if re.search(re.escape(c), text, re.IGNORECASE)]
                     links = extract_links(text)
-                    # position type logic
-                    p20 = text[:max(1, int(0.2*len(text)))].lower()
-                    if any(k.lower() in p20 for k in ["falcon"]+competitors):
+                    # Determine position type
+                    snippet = text[:max(1, int(0.2 * len(text)))].lower()
+                    if any(k.lower() in snippet for k in ["falcon"] + competitors):
                         pos = "lead answer"
                     elif cite_flag == "Y" and falcon_flag == "N":
                         pos = "citation"
@@ -122,7 +156,6 @@ if st.button("Run Analysis"):
                         pos = "embedded mention"
                     else:
                         pos = "absent"
-                    # collect row
                     results.append({
                         "Query": query,
                         "Source": source,
@@ -135,8 +168,12 @@ if st.button("Run Analysis"):
                         "Links": ", ".join(links)
                     })
                     time.sleep(1)  # rate-limit safety
+
         df = pd.DataFrame(results)
         st.dataframe(df, use_container_width=True)
         st.download_button(
-            "Download Results as CSV", df.to_csv(index=False), "results.csv"
+            "Download Results as CSV",
+            df.to_csv(index=False),
+            file_name="results.csv",
+            mime="text/csv"
         )
