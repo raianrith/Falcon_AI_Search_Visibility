@@ -24,7 +24,7 @@ st.markdown(
 
     /* ── Sidebar styling ─────────────────────────────────────────── */
     [data-testid="stSidebar"] > div:first-child {
-        background-color: #012902 !important;  /* tech green */
+        background-color: #011a01 !important;  /* tech green */
         padding-top: 1rem;
     }
     [data-testid="stSidebar"] h1,
@@ -199,7 +199,6 @@ st.markdown(
     </div>
     <div class="instructions">
       Paste multiple search queries (one per line) and compare answers from OpenAI, Gemini, and Perplexity.<br>
-      <code>-- Provide sources where you are extracting information from in this format - 'https?://\\S+' --</code>
     </div>
     """,
     unsafe_allow_html=True
