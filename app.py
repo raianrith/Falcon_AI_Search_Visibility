@@ -208,10 +208,6 @@ competitors = [
 # ─── HEADER & INSTRUCTIONS ───────────────────────────────────────────────────
 st.markdown(
     """
-    <div class="title-container">
-      <img src="ai_icon.png" alt="AI Icon" />
-      <h1>Falcon Structures AI‑Powered LLM Search Visibility Tool</h1>
-    </div>
     <div class="instructions">
       Paste multiple search queries (one per line) and compare answers from OpenAI, Gemini, and Perplexity.<br>
     </div>
