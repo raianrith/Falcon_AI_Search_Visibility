@@ -173,7 +173,7 @@ st.markdown(
     .stButton>button {
         margin: 24px auto !important;
         display: block !important;
-        background-color: #4CAF50 !important;
+        background-color: #05ffde !important;
         color: #fff !important;
         border-radius: 8px !important;
         padding: 12px 24px !important;
