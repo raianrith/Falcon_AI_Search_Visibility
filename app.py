@@ -11,7 +11,7 @@ st.sidebar.title("🛠️ Model Configuration")
 
 # OpenAI model options
 openai_choices = [
-    "gpt-4", "gpt-4.1", "o1", "gpt-4o","gpt-4.1-mini"
+    "gpt-4", "gpt-4o", "gpt-3.5-turbo", "gpt-3.5-turbo-16k"
 ]
 openai_model = st.sidebar.selectbox(
     "OpenAI model",
@@ -21,7 +21,7 @@ openai_model = st.sidebar.selectbox(
 
 # Gemini model options
 gemini_choices = [
-    "gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.0", "gemini-embed"
+    "gemini-2.5-flash", "gemini-2.5-pro"
 ]
 gemini_model_name = st.sidebar.selectbox(
     "Gemini model",
@@ -31,12 +31,12 @@ gemini_model_name = st.sidebar.selectbox(
 
 # Perplexity model options
 perplexity_choices = [
-    "sonar-pro", "perplexity-standard", "perplexity-raw"
+    "sonar", "sonar-pro"
 ]
 perplexity_model_name = st.sidebar.selectbox(
     "Perplexity model",
     perplexity_choices,
-    index=perplexity_choices.index("sonar-pro")
+    index=perplexity_choices.index("sonar")
 )
 
 # ========== CONFIGURATION: API KEYS ==========
