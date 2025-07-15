@@ -11,12 +11,12 @@ st.sidebar.title("🛠️ Model Configuration")
 
 # OpenAI model options
 openai_choices = [
-    "gpt-4.1 ($8/1 Million Tokens)", "o1($60/1 Million Tokens)", "gpt-4o($10/1 Million Tokens)","gpt-4.1-mini($1.6/1 Million Tokens)"
+    "gpt-4.1", "o1", "gpt-4o","gpt-4.1-mini"
 ]
 openai_model = st.sidebar.selectbox(
     "OpenAI model",
     openai_choices,
-    index=openai_choices.index("gpt-4")
+    index=openai_choices.index("gpt-4.1")
 )
 
 # Gemini model options
