@@ -162,7 +162,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 st.markdown(
-    "<p class='centered'><code>-- Provide sources where you are extracting information from in this format - 'https?://\\S+' --</code></p>",
+    "<p class='centered'><code>Add this at the end of each query --Please provide sources where you are extracting information from in this format - 'https?://\\S+' --</code></p>",
     unsafe_allow_html=True
 )
 # ─── INJECT CSS Center button ───────────────────────────────────────────────────────────────
