@@ -83,7 +83,7 @@ def extract_links(text: str) -> list:
 # ========== STREAMLIT UI ==========
 st.title("🔍 Falcon Structures AI Powered LLM Search Visibility Tool")
 st.markdown(
-    "Paste multiple search queries (one per line) and compare answers from ChatGPT, Gemini, and Perplexity.  Add -- "Provide sources where you are extracting information from in this format - 'https?://\\S+'" -- to the end of each querry."
+    "Paste multiple search queries (one per line) and compare answers from ChatGPT, Gemini, and Perplexity.  Add -- Provide sources where you are extracting information from in this format - 'https?://\\S+' -- to the end of each querry."
 )
 
 queries_input = st.text_area(
