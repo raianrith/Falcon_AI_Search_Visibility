@@ -159,7 +159,7 @@ st.markdown(
 st.markdown(
     """
     <div class="title-container">
-      <img src="ai_icon.png" width="48" />
+      <img src="artificial-intelligence.png" width="48" />
       <h1>Falcon Structures AI‑Powered LLM Search Visibility Tool</h1>
     </div>
     """,
