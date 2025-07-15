@@ -165,7 +165,24 @@ st.markdown(
     "<p class='centered'><code>-- Provide sources where you are extracting information from in this format - 'https?://\\S+' --</code></p>",
     unsafe_allow_html=True
 )
-
+# ─── INJECT CSS Center button ───────────────────────────────────────────────────────────────
+st.markdown(
+    """
+    <style>
+    /* center & restyle the “Run Analysis” button */
+    .stButton>button {
+        margin: 24px auto !important;
+        display: block !important;
+        background-color: #4CAF50 !important;
+        color: #fff !important;
+        border-radius: 8px !important;
+        padding: 12px 24px !important;
+        font-size: 18px !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 # ─── NICED‑UP TEXTAREA ────────────────────────────────────────────────────────
 queries_input = st.text_area(
     "Enter your queries here:",  
