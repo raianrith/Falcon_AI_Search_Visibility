@@ -18,7 +18,7 @@ gemini_model_name = st.secrets.get("gemini_model_name", "gemini-2.5-flash")
 perplexity_model_name = st.secrets.get("perplexity_model_name", "sonar-pro")
 
 # Competitor list
-competitors = ["Modular Genius", "Vanguard", "WillScot", "Mobile Modular"]
+competitors = ["ROXBOX Containers", "Wilmot Modular", "Pac-Van", "BMarko Structures", "Giant Containers", "XCaliber Container", "Conexwest", "Mobile Modular Portable Storage", "WillScot"]
 
 # ========== CLIENT INITIALIZATION ==========
 openai_client = OpenAI(api_key=openai_api_key)
@@ -81,15 +81,15 @@ def extract_links(text: str) -> list:
     return re.findall(r'https?://\S+', text)
 
 # ========== STREAMLIT UI ==========
-st.title("🔍 Search Visibility Comparison")
+st.title("🔍 Falcon Structures AI Powered LLM Search Visibility Tool")
 st.markdown(
-    "Paste multiple search queries (one per line) and compare answers from ChatGPT, Gemini, and Perplexity."
+    "Paste multiple search queries (one per line) and compare answers from ChatGPT, Gemini, and Perplexity.  Add -- "Provide sources where you are extracting information from in this format - 'https?://\\S+'" -- to the end of each querry."
 )
 
 queries_input = st.text_area(
     "Enter your queries here:",
     height=150,
-    placeholder="What companies provide modular container offices in the US?"
+    placeholder="What companies provide modular container offices in the US? Provide sources where you are extracting information from in this format - 'https?://\\S+'""
 )
 
 if st.button("Run Analysis"):
