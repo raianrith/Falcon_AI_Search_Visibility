@@ -1,4 +1,3 @@
-# app.py
 import streamlit as st
 from openai import OpenAI
 import google.generativeai as genai
@@ -7,122 +6,125 @@ import pandas as pd
 import time
 import os
 
-# ========== PAGE CONFIG ==========
-st.set_page_config(
-    page_title="Falcon Structures LLM Search",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-)
-
-# ========== SIDEBAR ==========
-with st.sidebar:
-    st.header("⚙️ Settings")
-    sleep_sec = st.slider("⏱️ Delay between calls (s)", 0.5, 3.0, 1.0, step=0.5)
-    show_links = st.checkbox("🔗 Show extracted URLs", value=True)
-    st.markdown("---")
-    st.write("API Models")
-    openai_model = st.selectbox("OpenAI model", ["gpt-4", "gpt-3.5-turbo"], index=0)
-    gemini_model_name = st.text_input("Gemini model", "gemini-2.5-flash")
-    perplexity_model_name = st.text_input("Perplexity model", "sonar-pro")
-
 # ========== CONFIGURATION ==========
-openai_api_key     = st.secrets.get("openai_api_key")     or os.getenv("OPENAI_API_KEY")
-gemini_api_key     = st.secrets.get("gemini_api_key")     or os.getenv("GEMINI_API_KEY")
+# API keys: store in Streamlit secrets or environment variables
+openai_api_key = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
+gemini_api_key = st.secrets.get("gemini_api_key") or os.getenv("GEMINI_API_KEY")
 perplexity_api_key = st.secrets.get("perplexity_api_key") or os.getenv("PERPLEXITY_API_KEY")
 
+# Model names
+openai_model = st.secrets.get("openai_model", "gpt-4")
+gemini_model_name = st.secrets.get("gemini_model_name", "gemini-2.5-flash")
+perplexity_model_name = st.secrets.get("perplexity_model_name", "sonar-pro")
+
+# Competitor list
+competitors = ["ROXBOX Containers", "Wilmot Modular", "Pac-Van", "BMarko Structures", "Giant Containers", "XCaliber Container", "Conexwest", "Mobile Modular Portable Storage", "WillScot"]
+
+# ========== CLIENT INITIALIZATION ==========
 openai_client = OpenAI(api_key=openai_api_key)
+
 genai.configure(api_key=gemini_api_key)
 gemini_model = genai.GenerativeModel(gemini_model_name)
+
 perplexity_client = OpenAI(
-    api_key=openai_api_key,
+    api_key=perplexity_api_key,
     base_url="https://api.perplexity.ai"
 )
 
 SYSTEM_PROMPT = (
-    "You are a marketing agent analyzing search visibility for Falcon Structures. "
-    "Answer succinctly and include requested sources."
+    "You are a marketing agent trying to analyze search visibility. "
+    "I am passing a few queries. You need to give me a response that you would "
+    "provide to anyone else querying the same thing."
 )
 
-competitors = [
-    "ROXBOX Containers", "Wilmot Modular", "Pac-Van", "BMarko Structures",
-    "Giant Containers", "XCaliber Container", "Conexwest",
-    "Mobile Modular Portable Storage", "WillScot"
-]
+# ========== RESPONSE FUNCTIONS ==========
+def get_openai_response(query: str) -> str:
+    try:
+        resp = openai_client.chat.completions.create(
+            model=openai_model,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user",   "content": query}
+            ]
+        )
+        return resp.choices[0].message.content.strip()
+    except Exception as e:
+        st.error(f"OpenAI error for query '{query}': {e}")
+        return "ERROR"
 
-# ========== UTILS ==========
-def extract_links(text: str) -> list[str]:
+
+def get_gemini_response(query: str) -> str:
+    try:
+        response = gemini_model.generate_content(query)
+        return response.candidates[0].content.parts[0].text.strip()
+    except Exception as e:
+        st.error(f"Gemini error for query '{query}': {e}")
+        return "ERROR"
+
+
+def get_perplexity_response(query: str) -> str:
+    try:
+        resp = perplexity_client.chat.completions.create(
+            model=perplexity_model_name,
+            messages=[
+                {"role": "system",  "content": SYSTEM_PROMPT},
+                {"role": "user",    "content": query}
+            ]
+        )
+        return resp.choices[0].message.content.strip()
+    except Exception as e:
+        st.error(f"Perplexity error for query '{query}': {e}")
+        return "ERROR"
+
+# ========== HELPER ==========
+def extract_links(text: str) -> list:
     return re.findall(r'https?://\S+', text)
 
-def get_openai_response(q): 
-    resp = openai_client.chat.completions.create(
-        model=openai_model,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user",   "content": q}
-        ]
-    )
-    return resp.choices[0].message.content.strip()
-
-def get_gemini_response(q):
-    r = gemini_model.generate_content(q)
-    return r.candidates[0].content.parts[0].text.strip()
-
-def get_perplexity_response(q):
-    resp = perplexity_client.chat.completions.create(
-        model=perplexity_model_name,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user",   "content": q}
-        ]
-    )
-    return resp.choices[0].message.content.strip()
-
-# ========== MAIN UI ==========
-st.title("🔍 Falcon Structures AI‑Powered LLM Search Visibility")
+# ========== STREAMLIT UI ==========
+st.title("🔍 Falcon Structures AI Powered LLM Search Visibility Tool")
 st.markdown(
-    "Paste **one query per line** below, then hit **Run Analysis**.  "
-    "Make sure to append your source‑format hint (`https?://\\S+`) if you need URLs extracted."
+    "Paste multiple search queries (one per line) and compare answers from ChatGPT, Gemini, and Perplexity.  Add -- Provide sources where you are extracting information from in this format - 'https?://\\S+' -- to the end of each querry."
 )
 
-with st.form("query_form", clear_on_submit=False):
-    col1, col2 = st.columns([4, 1])
-    with col1:
-        queries_input = st.text_area(
-            "Enter your queries here:",
-            height=180,
-            placeholder="What companies provide modular container offices in the US? Provide sources where you are extracting information from in this format - 'https?://\\S+'"
-        )
-    with col2:
-        run = st.form_submit_button("🔍 Run Analysis")
+queries_input = st.text_area(
+    "Enter your queries here:",
+    height=150,
+    placeholder="What companies provide modular container offices in the US? Provide sources where you are extracting information from in this format - 'https?://\\S+'"
+)
 
-if run:
+if st.button("Run Analysis"):
     queries = [q.strip() for q in queries_input.splitlines() if q.strip()]
     if not queries:
         st.warning("Please enter at least one query.")
     else:
         results = []
-        with st.spinner("Contacting LLMs…"):
-            for q in queries:
-                for source, fn in [
-                    ("ChatGPT",    get_openai_response),
-                    ("Gemini",     get_gemini_response),
+        with st.spinner("Gathering responses..."):
+            for query in queries:
+                for source, func in [
+                    ("OpenAI", get_openai_response),
+                    ("Gemini", get_gemini_response),
                     ("Perplexity", get_perplexity_response)
                 ]:
-                    text = fn(q)
+                    text = func(query)
+                    # metrics
                     wc = len(text.split())
-                    falcon_flag = "Y" if re.search(r'\bfalcon\b', text, re.IGNORECASE) else "N"
-                    cite_flag   = "Y" if bool(extract_links(text)) else "N"
+                    falcon_flag = "Y" if re.search(r'\bfalcon\b|\bfalconstructures\b', text, re.IGNORECASE) else "N"
+                    cite_flag = "Y" if re.search(r'https?://|\[\d+\]', text) else "N"
                     found = [c for c in competitors if re.search(re.escape(c), text, re.IGNORECASE)]
-                    pos = (
-                        "lead answer" if any(k.lower() in text[:int(0.2*len(text))].lower() 
-                                            for k in ["falcon"]+competitors)
-                        else "citation" if cite_flag=="Y" and falcon_flag=="N"
-                        else "embedded mention" if falcon_flag=="Y" or found
-                        else "absent"
-                    )
-                    links = extract_links(text) if show_links else []
+                    links = extract_links(text)
+                    # position type logic
+                    p20 = text[:max(1, int(0.2*len(text)))].lower()
+                    if any(k.lower() in p20 for k in ["falcon"]+competitors):
+                        pos = "lead answer"
+                    elif cite_flag == "Y" and falcon_flag == "N":
+                        pos = "citation"
+                    elif falcon_flag == "Y" or found:
+                        pos = "embedded mention"
+                    else:
+                        pos = "absent"
+                    # collect row
                     results.append({
-                        "Query": q,
+                        "Query": query,
                         "Source": source,
                         "Response": text,
                         "Word Count": wc,
@@ -130,13 +132,11 @@ if run:
                         "Citation Present": cite_flag,
                         "Competitors Mentioned": ", ".join(found),
                         "Position Type": pos,
-                        "Links": ", ".join(links),
+                        "Links": ", ".join(links)
                     })
-                    time.sleep(sleep_sec)
-
+                    time.sleep(1)  # rate-limit safety
         df = pd.DataFrame(results)
         st.dataframe(df, use_container_width=True)
-
         st.download_button(
-            "💾 Download CSV", df.to_csv(index=False), "falcon_search_results.csv"
+            "Download Results as CSV", df.to_csv(index=False), "results.csv"
         )
