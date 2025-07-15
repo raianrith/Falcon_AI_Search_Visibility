@@ -150,19 +150,9 @@ st.markdown(
 
 # ─── NICED‑UP TEXTAREA ────────────────────────────────────────────────────────
 queries_input = st.text_area(
-    "",  # label handled by our centered text above
+    "Enter your queries here:",  # label handled by our centered text above
     height=150,
-    placeholder="e.g. What companies provide modular container offices in the US? -- Provide sources where you are extracting information from in this format - 'https?://\\S+'"
-)
-
-
-queries_input = st.text_area(
-    "Enter your queries here:",
-    height=150,
-    placeholder=(
-        "What companies provide modular container offices in the US? "
-        "Provide sources where you are extracting information from in this format - 'https?://\\S+'"
-    )
+    placeholder="e.g. What companies provide modular container offices in the US? Provide sources where you are extracting information from in this format - 'https?://\\S+'"
 )
 
 if st.button("Run Analysis"):
