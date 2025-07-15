@@ -113,136 +113,85 @@ competitors = [
 # ========== STREAMLIT UI ==========
 import streamlit as st
 
-import streamlit as st
-
 # ─── INJECT CSS ───────────────────────────────────────────────────────────────
 st.markdown(
     """
     <style>
-    /* ── Overall app background & text ─────────────────────────── */
+    /* ── App background & text ───────────────────────────────────────── */
+    /* Target the main view container */
     [data-testid="stAppViewContainer"] {
         background-color: #000 !important;
     }
-    [data-testid="stAppViewContainer"],
+    /* Force white text everywhere in the main view */
+    [data-testid="stAppViewContainer"], 
     [data-testid="stAppViewContainer"] * {
         color: #fff !important;
-        background-color: transparent !important;
     }
 
-    /* ── Sidebar & its inputs ──────────────────────────────────── */
-    [data-testid="stSidebar"] > div:first-child {
-        background-color: #001a00 !important;  /* super‑dark green */
-    }
-    /* text inputs */
-    .stTextInput>div>div>input,
-    .stSelectbox>div>div>div,
-    .stNumberInput>div>div>input {
-        background-color: #001a00 !important;
-        color: #fff !important;
-        border: 1px solid #006622 !important; /* muted green */
-        border-radius: 6px !important;
-    }
-    /* dropdown menu items when opened */
-    .stSelectbox>div>div>div>div {
-        background-color: #001a00 !important;
-        color: #fff !important;
-    }
-
-    /* ── Header container ───────────────────────────────────────── */
-    .title-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-    .title-container img {
-      width: 48px;
-      height: auto;
-    }
-    .title-container h1 {
-      margin: 0;
-      font-size: 2.5rem;
-      color: #fff;
-    }
-
-    /* ── Centered paragraphs & code snippet ─────────────────────── */
+    /* ── Centered headings & paragraphs ─────────────────────────────── */
     h1, p.centered {
         text-align: center;
     }
+
+    /* ── Styled code snippets in your centered paragraph ────────────── */
     p.centered code {
-        background-color: #b30000 !important; /* deep red pill */
-        color: #fff !important;
-        padding: 4px 6px;
+        background-color: #222;
+        color: #0f0;
+        padding: 2px 4px;
         border-radius: 4px;
-        font-size: 0.9em;
     }
 
-    /* ── Markdown containers (remove their white pills) ─────────── */
-    [data-testid="stMarkdownContainer"] {
-        background-color: transparent !important;
-        padding: 0 !important;
-        border: none !important;
-    }
-
-    /* ── Textarea styling ───────────────────────────────────────── */
+    /* ── Textarea styling ───────────────────────────────────────────── */
     .stTextArea>div>div>textarea {
-        background-color: #001a00 !important;
+        background-color: #121212 !important;
         color: #fff !important;
-        border: 1px solid #006622 !important;
+        border: 2px solid #4CAF50 !important;
         border-radius: 8px !important;
         padding: 12px !important;
         font-size: 16px !important;
     }
-    .stTextArea>div>div>textarea:focus {
-        border-color: #009933 !important; /* brighter green on focus */
-        outline: none !important;
-    }
-
-    /* ── Center & restyle the Run Analysis button ──────────────── */
-    .stButton>button {
-        margin: 24px auto !important;
-        display: block !important;
-        background-color: #001a00 !important;   /* super‑dark green */
-        color: #fff !important;
-        border: 2px solid #006622 !important;    /* muted green */
-        border-radius: 8px !important;
-        padding: 12px 24px !important;
-        font-size: 18px !important;
-        transition: background-color 0.2s, border-color 0.2s;
-    }
-    .stButton>button:hover {
-        background-color: #b30000 !important;   /* red on hover */
-        border-color: #fff !important;
-    }
     </style>
     """,
-    unsafe_allow_html=True,
+    unsafe_allow_html=True
 )
 
-
-# ─── HEADER WITH YOUR PNG ICON ───────────────────────────────────────────────
+# ─── CENTERED TITLE & TEXT ─────────────────────────────────────────────────
 st.markdown(
     """
     <div class="title-container">
-      <img src="artificial-intelligence.png" alt="AI Icon" />
+      <img src="ai_icon.png" width="48" />
       <h1>Falcon Structures AI‑Powered LLM Search Visibility Tool</h1>
     </div>
     """,
     unsafe_allow_html=True,
 )
-
-# ─── INSTRUCTIONS ──────────────────────────────────────────────────────────────
 st.markdown(
     "<p class='centered'>Paste multiple search queries (one per line) and compare answers from OpenAI, Gemini, and Perplexity.</p>",
     unsafe_allow_html=True
 )
 st.markdown(
-    "<p class='centered'><code>-- Provide sources where you are extracting information from in this format - 'https?://\\S+' --</code></p>",
+    "<p class='centered'><code>Add this at the end of each query --Please provide sources where you are extracting information from in this format - 'https?://\\S+' --</code></p>",
     unsafe_allow_html=True
 )
-
-# ─── QUERY BOX ─────────────────────────────────────────────────────────────────
+# ─── INJECT CSS Center button ───────────────────────────────────────────────────────────────
+st.markdown(
+    """
+    <style>
+    /* center & restyle the “Run Analysis” button */
+    .stButton>button {
+        margin: 24px auto !important;
+        display: block !important;
+        background-color: #025404 !important;
+        color: #fff !important;
+        border-radius: 8px !important;
+        padding: 12px 24px !important;
+        font-size: 18px !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+# ─── NICED‑UP TEXTAREA ────────────────────────────────────────────────────────
 queries_input = st.text_area(
     "Enter your queries here:",  
     height=150,
@@ -251,7 +200,6 @@ queries_input = st.text_area(
         "-- Provide sources where you are extracting information from in this format - 'https?://\\S+'"
     )
 )
-
 
 
 if st.button("Run Analysis"):
