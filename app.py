@@ -144,7 +144,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 st.markdown(
-    "<p class='centered'>Add <code>-- Provide sources where you are extracting information from in this format - 'https?://\\S+'</code> to the end of each query.</p>",
+    "<p class='centered'> <code> Add Provide sources where you are extracting information from in this format - 'https?://\\S+' to the end of each query.</code> </p>",
     unsafe_allow_html=True
 )
 
