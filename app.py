@@ -89,7 +89,7 @@ st.markdown(
 queries_input = st.text_area(
     "Enter your queries here:",
     height=150,
-    placeholder="What companies provide modular container offices in the US? Provide sources where you are extracting information from in this format - 'https?://\\S+'""
+    placeholder="What companies provide modular container offices in the US? Provide sources where you are extracting information from in this format - 'https?://\\S+'"
 )
 
 if st.button("Run Analysis"):
