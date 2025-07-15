@@ -24,7 +24,7 @@ st.markdown(
 
     /* ── Sidebar styling ─────────────────────────────────────────── */
     [data-testid="stSidebar"] > div:first-child {
-        background-color: #024504 !important;  /* tech green */
+        background-color: #012902 !important;  /* tech green */
         padding-top: 1rem;
     }
     [data-testid="stSidebar"] h1,
