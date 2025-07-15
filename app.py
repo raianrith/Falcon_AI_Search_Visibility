@@ -156,7 +156,15 @@ st.markdown(
 )
 
 # ─── CENTERED TITLE & TEXT ─────────────────────────────────────────────────
-st.markdown("<h1>🔍 Falcon Structures AI Powered LLM Search Visibility Tool</h1>", unsafe_allow_html=True)
+st.markdown(
+    """
+    <div class="title-container">
+      <img src="ai_icon.png" width="48" />
+      <h1>Falcon Structures AI‑Powered LLM Search Visibility Tool</h1>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 st.markdown(
     "<p class='centered'>Paste multiple search queries (one per line) and compare answers from OpenAI, Gemini, and Perplexity.</p>",
     unsafe_allow_html=True
