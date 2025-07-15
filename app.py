@@ -119,26 +119,36 @@ import streamlit as st
 st.markdown(
     """
     <style>
-    /* ── Overall app background & text ─────────────────────────────────── */
+    /* ── Overall app background & text ─────────────────────────── */
     [data-testid="stAppViewContainer"] {
-        background-color: #000 !important;  /* pitch‑black */
+        background-color: #000 !important;
     }
     [data-testid="stAppViewContainer"],
     [data-testid="stAppViewContainer"] * {
-        color: #fff !important;             /* all text in white */
+        color: #fff !important;
+        background-color: transparent !important;
     }
 
-    /* ── Sidebar in very dark green ─────────────────────────────────────── */
+    /* ── Sidebar & its inputs ──────────────────────────────────── */
     [data-testid="stSidebar"] > div:first-child {
-        background-color: #013220 !important; /* very dark green */
+        background-color: #001a00 !important;  /* super‑dark green */
     }
-    [data-testid="stSidebar"] svg, 
-    [data-testid="stSidebar"] label, 
-    [data-testid="stSidebar"] .stSelectbox__label {
+    /* text inputs */
+    .stTextInput>div>div>input,
+    .stSelectbox>div>div>div,
+    .stNumberInput>div>div>input {
+        background-color: #001a00 !important;
+        color: #fff !important;
+        border: 1px solid #006622 !important; /* muted green */
+        border-radius: 6px !important;
+    }
+    /* dropdown menu items when opened */
+    .stSelectbox>div>div>div>div {
+        background-color: #001a00 !important;
         color: #fff !important;
     }
 
-    /* ── Header container ─────────────────────────────────────────────── */
+    /* ── Header container ───────────────────────────────────────── */
     .title-container {
       display: flex;
       align-items: center;
@@ -156,52 +166,60 @@ st.markdown(
       color: #fff;
     }
 
-    /* ── Centered paragraphs & code snippet ───────────────────────────── */
+    /* ── Centered paragraphs & code snippet ─────────────────────── */
     h1, p.centered {
         text-align: center;
     }
     p.centered code {
-        background-color: #b30000; /* deep red */
-        color: #fff;
+        background-color: #b30000 !important; /* deep red pill */
+        color: #fff !important;
         padding: 4px 6px;
         border-radius: 4px;
         font-size: 0.9em;
     }
 
-    /* ── Textarea styling ─────────────────────────────────────────────── */
+    /* ── Markdown containers (remove their white pills) ─────────── */
+    [data-testid="stMarkdownContainer"] {
+        background-color: transparent !important;
+        padding: 0 !important;
+        border: none !important;
+    }
+
+    /* ── Textarea styling ───────────────────────────────────────── */
     .stTextArea>div>div>textarea {
-        background-color: #121212 !important;  /* dark charcoal */
+        background-color: #001a00 !important;
         color: #fff !important;
-        border: 2px solid #013220 !important;  /* very dark green */
+        border: 1px solid #006622 !important;
         border-radius: 8px !important;
         padding: 12px !important;
         font-size: 16px !important;
     }
     .stTextArea>div>div>textarea:focus {
-        border: 2px solid #b30000 !important;  /* red on focus */
+        border-color: #009933 !important; /* brighter green on focus */
         outline: none !important;
     }
 
-    /* ── Center & restyle the Run Analysis button ─────────────────────── */
+    /* ── Center & restyle the Run Analysis button ──────────────── */
     .stButton>button {
         margin: 24px auto !important;
         display: block !important;
-        background-color: #013220 !important;   /* very dark green */
+        background-color: #001a00 !important;   /* super‑dark green */
         color: #fff !important;
-        border: 2px solid #b30000 !important;   /* red border */
+        border: 2px solid #006622 !important;    /* muted green */
         border-radius: 8px !important;
         padding: 12px 24px !important;
         font-size: 18px !important;
         transition: background-color 0.2s, border-color 0.2s;
     }
     .stButton>button:hover {
-        background-color: #b30000 !important;   /* red background on hover */
+        background-color: #b30000 !important;   /* red on hover */
         border-color: #fff !important;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
+
 
 # ─── HEADER WITH YOUR PNG ICON ───────────────────────────────────────────────
 st.markdown(
