@@ -11,41 +11,44 @@ st.set_page_config(page_title="Falcon Structures LLM Tool", layout="wide")
 
 # Custom CSS
 st.markdown("""
-    <style>
-    /* ── Tab styling ───────────────────────────────────────────────────────── */
-    /* Base selector for Streamlit tabs */
-    div[data-baseweb="tab-list"] button[role="tab"] {
-        background-color: #fff !important;
-        color: #000 !important;
-        border: 1px solid transparent;
-        border-radius: 4px 4px 0 0;
-        padding: 0.5rem 1rem;
-        margin: 0;
-        position: relative;
-    }
-    /* Separator between tabs */
-    div[data-baseweb="tab-list"] button[role="tab"]:not(:last-child)::after {
-        content: "|";
-        position: absolute;
-        right: -10px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #000;
-    }
-    /* Hover state */
-    div[data-baseweb="tab-list"] button[role="tab"]:hover {
-        background-color: red !important;
-        color: #fff !important;
-    }
-    /* Selected tab */
-    div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"] {
-        border-color: #888 !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        background-color: #fff !important;
-        color: #000 !important;
-    }
-    </style>
+<style>
+/* Center the tabs */
+div[data-baseweb="tab-list"] {
+    display: flex !important;
+    justify-content: center !important;
+}
+
+/* (Your existing tab styles follow…) */
+div[data-baseweb="tab-list"] button[role="tab"] {
+    background-color: #fff !important;
+    color: #000 !important;
+    border: 1px solid transparent;
+    border-radius: 4px 4px 0 0;
+    padding: 0.5rem 1rem;
+    margin: 0;
+    position: relative;
+}
+div[data-baseweb="tab-list"] button[role="tab"]:not(:last-child)::after {
+    content: "|";
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #000;
+}
+div[data-baseweb="tab-list"] button[role="tab"]:hover {
+    background-color: red !important;
+    color: #fff !important;
+}
+div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"] {
+    border-color: #888 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    background-color: #fff !important;
+    color: #000 !important;
+}
+</style>
 """, unsafe_allow_html=True)
+
 
 # ─── LOGO & HEADER ─────────────────────────────────────────────────────────────
 st.markdown("""
