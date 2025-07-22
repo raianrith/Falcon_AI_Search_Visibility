@@ -195,15 +195,6 @@ def get_perplexity_response(query: str) -> str:
         st.error(f"Perplexity error for query '{query}': {e}")
         return "ERROR"
 
-def extract_links(text: str) -> list:
-    return re.findall(r'https?://\S+', text)
-
-competitors = [
-    "ROXBOX Containers", "Wilmot Modular", "Pac-Van", "BMarko Structures",
-    "Giant Containers", "XCaliber Container", "Conexwest",
-    "Mobile Modular Portable Storage", "WillScot"
-]
-
 # ─── HEADER & INSTRUCTIONS ───────────────────────────────────────────────────
 st.markdown(
     """
@@ -238,36 +229,16 @@ if st.button("Run Analysis"):
                     ("Perplexity", get_perplexity_response)
                 ]:
                     text = func(query)
-                    wc = len(text.split())
-                    falcon_flag = "Y" if re.search(r'\bfalcon\b|\bfalconstructures\b', text, re.IGNORECASE) else "N"
-                    cite_flag = "Y" if re.search(r'https?://|\[\d+\]', text) else "N"
-                    found = [c for c in competitors if re.search(re.escape(c), text, re.IGNORECASE)]
-                    links = extract_links(text)
-
-                    snippet = text[:max(1, int(0.2 * len(text)))].lower()
-                    if any(k.lower() in snippet for k in ["falcon"] + competitors):
-                        pos = "lead answer"
-                    elif cite_flag == "Y" and falcon_flag == "N":
-                        pos = "citation"
-                    elif falcon_flag == "Y" or found:
-                        pos = "embedded mention"
-                    else:
-                        pos = "absent"
-
+                    # Only keep Query and Response
                     results.append({
                         "Query": query,
-                        "Source": source,
-                        "Response": text,
-                        "Word Count": wc,
-                        "Falcon Mentioned": falcon_flag,
-                        "Citation Present": cite_flag,
-                        "Competitors Mentioned": ", ".join(found),
-                        "Position Type": pos,
-                        "Links": ", ".join(links)
+                        "Response": text
                     })
                     time.sleep(1)
 
         df = pd.DataFrame(results)
+        df = df[["Query", "Response"]]
+
         st.dataframe(df, use_container_width=True)
         st.download_button(
             "Download Results as CSV",
