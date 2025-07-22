@@ -155,7 +155,6 @@ perplexity_client = OpenAI(
 
 # ─── SYSTEM PROMPT & HELPERS ─────────────────────────────────────────────────
 SYSTEM_PROMPT = (
-    "You are a marketing agent trying to analyze search visibility. "
     "I am passing a few queries. You need to give me a response that you would "
     "provide to anyone else querying the same thing."
 )
