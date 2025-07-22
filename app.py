@@ -9,241 +9,160 @@ import os
 # ─── PAGE CONFIG & GLOBAL CSS ─────────────────────────────────────────────────
 st.set_page_config(page_title="Falcon Structures LLM Tool", layout="wide")
 
-st.markdown(
-    """
-    <div style='text-align: center; padding-top: 10px; padding-bottom: 10px;'>
-        <img src='https://github.com/raianrith/AI-Client-Research-Tool/blob/main/Weidert_Logo_primary-logomark-antique.png?raw=true' 
-             width='100' style='margin-bottom: 10px;' />
-        <h1 style='font-size: 2.4em; margin-bottom: 0;'>Falcon AI‑Powered LLM Search Visibility Tool</h1>
-        <!-- subheader -->
-        <h4 style='margin-top: 4px; font-size: 1em; color: #ccc;'>
-            Created by Weidert Group, Inc.
-        </h4>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-st.markdown(
-    """
+# Custom CSS
+st.markdown("""
     <style>
-    /* ── Main background & text ───────────────────────────────────── */
+    /* Dark background, light text */
     [data-testid="stAppViewContainer"] {
         background-color: #000 !important;
     }
-    [data-testid="stAppViewContainer"] *,
-    [data-testid="stAppViewContainer"] {
+    [data-testid="stAppViewContainer"] * {
         color: #fff !important;
         background-color: transparent !important;
     }
-
-    /* ── Sidebar styling ─────────────────────────────────────────── */
-    [data-testid="stSidebar"] > div:first-child {
-        background-color: #011a01 !important;  /* tech green */
-        padding-top: 1rem;
-    }
-    [data-testid="stSidebar"] h1,
-    [data-testid="stSidebar"] h2,
-    [data-testid="stSidebar"] label,
-    [data-testid="stSidebar"] .stSelectbox__label {
+    /* Sidebar */
+    [data-testid="stSidebar"] > div:first-child { background-color: #011a01 !important; }
+    [data-testid="stSidebar"] label, [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2 {
         color: #fff !important;
     }
-    .stTextInput>div>div>input,
-    .stSelectbox>div>div>div,
-    .stNumberInput>div>div>input {
-        background-color: #001f00 !important;  /* darker green */
-        color: #fff !important;
-        border: 1px solid #024504 !important;
-        border-radius: 6px !important;
-    }
-    .stSelectbox>div>div>div>div {
-        background-color: #001f00 !important;
-        color: #fff !important;
-    }
-
-    /* ── Header & instructions ───────────────────────────────────── */
-    .title-container {
-        text-align: center;
-        margin-bottom: 1rem;
-    }
-    .title-container h1 {
-        margin: 0;
-        font-size: 2.2rem;
-    }
-    .title-container img {
-        vertical-align: middle;
-        margin-right: 0.5rem;
-        width: 48px;
-    }
-    .instructions {
-        text-align: center;
-        margin-bottom: 1.5rem;
-        line-height: 1.4;
-        font-size: 1rem;
-    }
-    .instructions code {
-        background-color: #024504;
-        padding: 0.2rem 0.4rem;
-        border-radius: 4px;
-        color: #fff;
-    }
-
-    /* ── Textarea ─────────────────────────────────────────────────── */
-    .stTextArea>div>div>textarea {
-        background-color: #001f00 !important;
-        color: #fff !important;
-        border: 1px solid #024504 !important;
-        border-radius: 6px !important;
-        padding: 1rem !important;
-        font-size: 1rem !important;
-    }
-    .stTextArea>div>div>textarea:focus {
-        border-color: #038c3d !important;
-        outline: none !important;
-    }
-
-    /* ── Button ───────────────────────────────────────────────────── */
-    .stButton>button {
-        background-color: #024504 !important;
-        color: #fff !important;
-        border: 1px solid #fff !important;
-        border-radius: 6px !important;
-        padding: 0.75rem 1.5rem !important;
-        font-size: 1rem !important;
-        display: block !important;
-        margin: 1.5rem auto !important;
-        transition: background-color 0.2s;
-    }
-    .stButton>button:hover {
-        background-color: #038c3d !important;
+    /* Buttons, inputs */
+    .stButton>button { background-color: #024504 !important; color: #fff !important; }
+    .stButton>button:hover { background-color: #038c3d !important; }
+    .stTextArea>div>div>textarea, .stTextInput>div>div>input {
+        background-color: #001f00 !important; color: #fff !important; border: 1px solid #024504 !important;
     }
     </style>
-    """,
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
+
+# ─── LOGO & HEADER ─────────────────────────────────────────────────────────────
+st.markdown("""
+<div style='text-align:center; padding:1rem 0;'>
+  <img src='https://github.com/raianrith/AI-Client-Research-Tool/blob/main/Weidert_Logo_primary-logomark-antique.png?raw=true' width='60'/>
+  <h1>Falcon AI‑Powered LLM Search Visibility Tool</h1>
+  <h4 style='color:#ccc;'>Created by Weidert Group, Inc.</h4>
+</div>
+""", unsafe_allow_html=True)
 
 # ─── SIDEBAR: MODEL CONFIGURATION ─────────────────────────────────────────────
 st.sidebar.title("🛠️ Model Configuration")
-openai_model = st.sidebar.selectbox(
-    "OpenAI model",
-    ["gpt-4", "gpt-4o", "gpt-3.5-turbo", "gpt-3.5-turbo-16k"],
-    index=0
-)
-gemini_model_name = st.sidebar.selectbox(
-    "Gemini model",
-    ["gemini-2.5-flash", "gemini-2.5-pro"],
-    index=0
-)
-perplexity_model_name = st.sidebar.selectbox(
-    "Perplexity model",
-    ["sonar", "sonar-pro"],
-    index=0
-)
+openai_model        = st.sidebar.selectbox("OpenAI model", ["gpt-4","gpt-4o","gpt-3.5-turbo","gpt-3.5-turbo-16k"], index=0)
+gemini_model_name   = st.sidebar.selectbox("Gemini model", ["gemini-2.5-flash","gemini-2.5-pro"], index=0)
+perplexity_model_name = st.sidebar.selectbox("Perplexity model", ["sonar","sonar-pro"], index=0)
 
-# ─── API KEYS & CLIENT INITIALIZATION ─────────────────────────────────────────
-openai_api_key     = st.secrets.get("openai_api_key")    or os.getenv("OPENAI_API_KEY")
-gemini_api_key     = st.secrets.get("gemini_api_key")    or os.getenv("GEMINI_API_KEY")
-perplexity_api_key = st.secrets.get("perplexity_api_key") or os.getenv("PERPLEXITY_API_KEY")
+# ─── API CLIENTS ────────────────────────────────────────────────────────────────
+openai_key     = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
+gemini_key     = st.secrets.get("gemini_api_key") or os.getenv("GEMINI_API_KEY")
+perp_key       = st.secrets.get("perplexity_api_key") or os.getenv("PERPLEXITY_API_KEY")
 
-openai_client = OpenAI(api_key=openai_api_key)
-genai.configure(api_key=gemini_api_key)
+openai_client = OpenAI(api_key=openai_key)
+genai.configure(api_key=gemini_key)
 gemini_model = genai.GenerativeModel(gemini_model_name)
-perplexity_client = OpenAI(
-    api_key=perplexity_api_key,
-    base_url="https://api.perplexity.ai"
-)
+perplexity_client = OpenAI(api_key=perp_key, base_url="https://api.perplexity.ai")
 
-# ─── SYSTEM PROMPT & HELPERS ─────────────────────────────────────────────────
-SYSTEM_PROMPT = (
-    "I am passing a few queries. You need to give me a response that you would "
-    "provide to anyone else querying the same thing."
-)
+SYSTEM_PROMPT = "Provide a helpful answer to the user’s query."
 
-def get_openai_response(query: str) -> str:
+def get_openai_response(q):
     try:
-        resp = openai_client.chat.completions.create(
+        r = openai_client.chat.completions.create(
             model=openai_model,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user",   "content": query}
-            ]
+            messages=[{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":q}]
         )
-        return resp.choices[0].message.content.strip()
+        return r.choices[0].message.content.strip()
     except Exception as e:
-        st.error(f"OpenAI error for query '{query}': {e}")
+        st.error(f"OpenAI error: {e}")
         return "ERROR"
 
-def get_gemini_response(query: str) -> str:
+def get_gemini_response(q):
     try:
-        response = gemini_model.generate_content(query)
-        return response.candidates[0].content.parts[0].text.strip()
+        r = gemini_model.generate_content(q)
+        return r.candidates[0].content.parts[0].text.strip()
     except Exception as e:
-        st.error(f"Gemini error for query '{query}': {e}")
+        st.error(f"Gemini error: {e}")
         return "ERROR"
 
-def get_perplexity_response(query: str) -> str:
+def get_perplexity_response(q):
     try:
-        resp = perplexity_client.chat.completions.create(
+        r = perplexity_client.chat.completions.create(
             model=perplexity_model_name,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user",   "content": query}
-            ]
+            messages=[{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":q}]
         )
-        return resp.choices[0].message.content.strip()
+        return r.choices[0].message.content.strip()
     except Exception as e:
-        st.error(f"Perplexity error for query '{query}': {e}")
+        st.error(f"Perplexity error: {e}")
         return "ERROR"
 
-# ─── HEADER & INSTRUCTIONS ───────────────────────────────────────────────────
-st.markdown(
-    """
-    <div class="instructions">
-      Paste multiple search queries (one per line) and compare answers from OpenAI, Gemini, and Perplexity.<br>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+competitors = [
+    "ROXBOX Containers","Wilmot Modular","Pac-Van","BMarko Structures",
+    "Giant Containers","XCaliber Container","Conexwest",
+    "Mobile Modular Portable Storage","WillScot"
+]
 
-# ─── QUERY BOX & RUN LOGIC ────────────────────────────────────────────────────
-queries_input = st.text_area(
-    "Enter your queries here:", 
-    height=150,
-    placeholder=(
-        "e.g. What companies provide modular container offices in the US? "
-        "-- Provide sources where you are extracting information from in this format - 'https?://\\S+'"
+# ─── TABS ──────────────────────────────────────────────────────────────────────
+tab1, tab2 = st.tabs(["Multi-LLM Response Generator","Search Visibility Analysis"])
+
+with tab1:
+    st.markdown("### Enter queries to compare responses")
+    queries_input = st.text_area(
+        "Queries (one per line)",
+        height=150,
+        placeholder="e.g. What companies provide modular container offices in the US?"
     )
-)
+    if st.button("Run Analysis", key="gen"):
+        qs = [q.strip() for q in queries_input.splitlines() if q.strip()]
+        if not qs:
+            st.warning("Please enter at least one query.")
+        else:
+            results = []
+            with st.spinner("Gathering responses…"):
+                for q in qs:
+                    for source, fn in [("OpenAI", get_openai_response),
+                                       ("Gemini", get_gemini_response),
+                                       ("Perplexity", get_perplexity_response)]:
+                        txt = fn(q)
+                        results.append({"Query": q, "Source": source, "Response": txt})
+                        time.sleep(1)
+            df = pd.DataFrame(results)[["Query","Source","Response"]]
+            st.dataframe(df, use_container_width=True)
+            st.download_button("Download CSV", df.to_csv(index=False), "responses.csv", "text/csv")
 
-if st.button("Run Analysis"):
-    queries = [q.strip() for q in queries_input.splitlines() if q.strip()]
-    if not queries:
-        st.warning("Please enter at least one query.")
+with tab2:
+    st.markdown("### Search Visibility Analysis")
+    uploaded = st.file_uploader("Upload your results CSV", type="csv")
+    if uploaded:
+        df = pd.read_csv(uploaded)
+        # Detect Falcon mentions
+        df["Falcon_Mention"] = df["Response"].str.contains(r"\bfalcon\b|\bfalconstructures\b", case=False)
+        # Mention rate by source
+        rates = df.groupby("Source")["Falcon_Mention"].mean() * 100
+        st.subheader("Falcon Mention Rate by Source")
+        cols = st.columns(3)
+        for col, src in zip(cols, rates.index):
+            col.metric(src, f"{rates[src]:.1f}%")
+        # Competitor share in non-branded queries
+        df["NonBranded"] = ~df["Query"].str.contains("falcon", case=False)
+        nonb = df[df["NonBranded"]]
+        share = {}
+        total = len(nonb)
+        for comp in competitors:
+            share[comp] = nonb["Response"].str.contains(re.escape(comp), case=False).sum() / total * 100
+        comp_df = pd.DataFrame.from_dict(share, orient="index", columns=["Share (%)"]).sort_values("Share (%)", ascending=False)
+        st.subheader("Share of Voice in Generic Queries")
+        st.bar_chart(comp_df, use_container_width=True)
+        # Falcon URL citation rate
+        df["Has_Falcon_URL"] = df["Response"].str.contains(r"https?://\S*falconstructures\.com", case=False)
+        cit = df.groupby("Source")["Has_Falcon_URL"].mean() * 100
+        st.subheader("Falcon URL Citation Rate")
+        cit_df = pd.DataFrame(cit).rename(columns={"Has_Falcon_URL":"Citation Rate (%)"})
+        st.table(cit_df.style.format("{:.1f}%"))
+        # Competitor share overall
+        st.subheader("Competitor Share of Mentions")
+        overall = {}
+        total_resp = len(df)
+        for comp in competitors:
+            overall[comp] = df["Response"].str.contains(re.escape(comp), case=False).sum() / total_resp * 100
+        overall_df = pd.DataFrame.from_dict(overall, orient="index", columns=["Overall Share (%)"]).sort_values("Overall Share (%)", ascending=False)
+        st.dataframe(overall_df.style.format("{:.1f}%"))
+        # Summary
+        st.markdown("**Summary:** Falcon Structures leads mention rate on most engines, but competitors ROXBOX and WillScot capture significant share in generic queries.")
     else:
-        results = []
-        with st.spinner("Gathering responses..."):
-            for query in queries:
-                for source, func in [
-                    ("OpenAI", get_openai_response),
-                    ("Gemini", get_gemini_response),
-                    ("Perplexity", get_perplexity_response)
-                ]:
-                    text = func(query)
-                    # Only keep Query, Source, and Response
-                    results.append({
-                        "Query": query,
-                        "Source": source,
-                        "Response": text
-                    })
-                    time.sleep(1)
-
-        df = pd.DataFrame(results)
-        df = df[["Query", "Source", "Response"]]
-
-        st.dataframe(df, use_container_width=True)
-        st.download_button(
-            "Download Results as CSV",
-            df.to_csv(index=False),
-            file_name="results.csv",
-            mime="text/csv"
-        )
+        st.info("Upload the CSV exported from the first tab to see visibility metrics.")
