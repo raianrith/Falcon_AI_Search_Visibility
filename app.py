@@ -12,24 +12,37 @@ st.set_page_config(page_title="Falcon Structures LLM Tool", layout="wide")
 # Custom CSS
 st.markdown("""
     <style>
-    /* Dark background, light text */
-    [data-testid="stAppViewContainer"] {
-        background-color: #000 !important;
+    /* ── Tab styling ───────────────────────────────────────────────────────── */
+    /* Base selector for Streamlit tabs */
+    div[data-baseweb="tab-list"] button[role="tab"] {
+        background-color: #fff !important;
+        color: #000 !important;
+        border: 1px solid transparent;
+        border-radius: 4px 4px 0 0;
+        padding: 0.5rem 1rem;
+        margin: 0;
+        position: relative;
     }
-    [data-testid="stAppViewContainer"] * {
+    /* Separator between tabs */
+    div[data-baseweb="tab-list"] button[role="tab"]:not(:last-child)::after {
+        content: "|";
+        position: absolute;
+        right: -10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #000;
+    }
+    /* Hover state */
+    div[data-baseweb="tab-list"] button[role="tab"]:hover {
+        background-color: red !important;
         color: #fff !important;
-        background-color: transparent !important;
     }
-    /* Sidebar */
-    [data-testid="stSidebar"] > div:first-child { background-color: #011a01 !important; }
-    [data-testid="stSidebar"] label, [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2 {
-        color: #fff !important;
-    }
-    /* Buttons, inputs */
-    .stButton>button { background-color: #024504 !important; color: #fff !important; }
-    .stButton>button:hover { background-color: #038c3d !important; }
-    .stTextArea>div>div>textarea, .stTextInput>div>div>input {
-        background-color: #001f00 !important; color: #fff !important; border: 1px solid #024504 !important;
+    /* Selected tab */
+    div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"] {
+        border-color: #888 !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        background-color: #fff !important;
+        color: #000 !important;
     }
     </style>
 """, unsafe_allow_html=True)
