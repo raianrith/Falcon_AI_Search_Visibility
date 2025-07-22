@@ -119,7 +119,7 @@ tab1, tab2 = st.tabs(["Multi-LLM Response Generator","Search Visibility Analysis
 with tab1:
     # Centered heading via HTML
     st.markdown(
-        '<h3 style="text-align:center; margin-bottom:1rem;">Enter queries to compare responses</h3>',
+        '<h3 style="text-align:left; margin-bottom:1rem;">Enter queries to compare responses</h3>',
         unsafe_allow_html=True
     )
 
