@@ -117,29 +117,41 @@ competitors = [
 tab1, tab2 = st.tabs(["Multi-LLM Response Generator","Search Visibility Analysis"])
 
 with tab1:
-    st.markdown("### Enter queries to compare responses")
-    queries_input = st.text_area(
-        "Queries (one per line)",
-        height=150,
-        placeholder="e.g. What companies provide modular container offices in the US?"
+    # Centered heading via HTML
+    st.markdown(
+        '<h3 style="text-align:center; margin-bottom:1rem;">Enter queries to compare responses</h3>',
+        unsafe_allow_html=True
     )
-    if st.button("Run Analysis", key="gen"):
-        qs = [q.strip() for q in queries_input.splitlines() if q.strip()]
-        if not qs:
-            st.warning("Please enter at least one query.")
-        else:
-            results = []
-            with st.spinner("Gathering responses…"):
-                for q in qs:
-                    for source, fn in [("OpenAI", get_openai_response),
-                                       ("Gemini", get_gemini_response),
-                                       ("Perplexity", get_perplexity_response)]:
-                        txt = fn(q)
-                        results.append({"Query": q, "Source": source, "Response": txt})
-                        time.sleep(1)
-            df = pd.DataFrame(results)[["Query","Source","Response"]]
-            st.dataframe(df, use_container_width=True)
-            st.download_button("Download CSV", df.to_csv(index=False), "responses.csv", "text/csv")
+
+    # Create three columns and use the middle one for our input
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        queries_input = st.text_area(
+            "Queries (one per line)",
+            height=150,
+            placeholder="e.g. What companies provide modular container offices in the US?"
+        )
+        # Center the button as well
+        run = st.button("Run Analysis", key="gen", help="Click to get responses")
+        if run:
+            qs = [q.strip() for q in queries_input.splitlines() if q.strip()]
+            if not qs:
+                st.warning("Please enter at least one query.")
+            else:
+                results = []
+                with st.spinner("Gathering responses…"):
+                    for q in qs:
+                        for source, fn in [
+                            ("OpenAI", get_openai_response),
+                            ("Gemini", get_gemini_response),
+                            ("Perplexity", get_perplexity_response)
+                        ]:
+                            txt = fn(q)
+                            results.append({"Query": q, "Source": source, "Response": txt})
+                            time.sleep(1)
+                df = pd.DataFrame(results)[["Query","Source","Response"]]
+                st.dataframe(df, use_container_width=True)
+                st.download_button("Download CSV", df.to_csv(index=False), "responses.csv", "text/csv")
 
 with tab2:
     st.markdown("### Search Visibility Analysis")
