@@ -49,6 +49,14 @@ div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"] {
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+  <style>
+    div.stButton > button {
+      margin: 0 auto;
+      display: block;
+    }
+  </style>
+""", unsafe_allow_html=True)
 
 # ─── LOGO & HEADER ─────────────────────────────────────────────────────────────
 st.markdown("""
