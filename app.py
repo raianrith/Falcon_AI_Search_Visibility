@@ -119,14 +119,16 @@ tab1, tab2 = st.tabs(["Multi-LLM Response Generator","Search Visibility Analysis
 with tab1:
     # Centered heading
     st.markdown(
-        '<h3 style="text-align:center; margin-bottom:1rem;">Enter queries to compare responses</h3>',
+        '<h4 style="text-align:left; margin-bottom:1rem; color:#a9a9a9">
+        'Enter queries to generate responses from OpenAI (Chat GPT), Gemini, & Perplexity.'
+        '</h4>',
         unsafe_allow_html=True
     )
 
     # Full‑width text area
     queries_input = st.text_area(
         "Queries (one per line)",
-        height=300,
+        height=200,
         placeholder="e.g. What companies provide modular container offices in the US?"
     )
 
