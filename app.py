@@ -229,15 +229,16 @@ if st.button("Run Analysis"):
                     ("Perplexity", get_perplexity_response)
                 ]:
                     text = func(query)
-                    # Only keep Query and Response
+                    # Only keep Query, Source, and Response
                     results.append({
                         "Query": query,
+                        "Source": source,
                         "Response": text
                     })
                     time.sleep(1)
 
         df = pd.DataFrame(results)
-        df = df[["Query", "Response"]]
+        df = df[["Query", "Source", "Response"]]
 
         st.dataframe(df, use_container_width=True)
         st.download_button(
