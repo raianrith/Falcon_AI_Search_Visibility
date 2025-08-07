@@ -2,3 +2,5 @@ streamlit
 openai
 google-generativeai
 pandas
+matplotlib
+nltk
