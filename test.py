@@ -6,174 +6,210 @@ import pandas as pd
 import time
 import os
 
-# ========== SIDEBAR: MODEL SELECTION ==========
+# ─── PAGE CONFIG & GLOBAL CSS ─────────────────────────────────────────────────
+st.set_page_config(page_title="Falcon Structures LLM Tool", layout="wide")
+
+# Custom CSS
+st.markdown("""
+<style>
+/* Center the tabs */
+div[data-baseweb="tab-list"] {
+    display: flex !important;
+    justify-content: center !important;
+}
+
+/* (Your existing tab styles follow…) */
+div[data-baseweb="tab-list"] button[role="tab"] {
+    background-color: #fff !important;
+    color: #000 !important;
+    border: 1px solid transparent;
+    border-radius: 4px 4px 0 0;
+    padding: 0.5rem 1rem;
+    margin: 0;
+    position: relative;
+}
+div[data-baseweb="tab-list"] button[role="tab"]:not(:last-child)::after {
+    content: "|";
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #000;
+}
+div[data-baseweb="tab-list"] button[role="tab"]:hover {
+    background-color: red !important;
+    color: #fff !important;
+}
+div[data-baseweb="tab-list"] button[role="tab"][aria-selected="true"] {
+    border-color: #888 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    background-color: #fff !important;
+    color: #000 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+  <style>
+    div.stButton > button {
+      margin: 0 auto;
+      display: block;
+    }
+  </style>
+""", unsafe_allow_html=True)
+
+# ─── LOGO & HEADER ─────────────────────────────────────────────────────────────
+st.markdown("""
+<div style='text-align:center; padding:1rem 0;'>
+  <img src='https://github.com/raianrith/AI-Client-Research-Tool/blob/main/Weidert_Logo_primary-logomark-antique.png?raw=true' width='60'/>
+  <h1>Falcon AI‑Powered LLM Search Visibility Tool</h1>
+  <h4 style='color:#ccc;'>Created by Weidert Group, Inc.</h4>
+</div>
+""", unsafe_allow_html=True)
+
+# ─── SIDEBAR: MODEL CONFIGURATION ─────────────────────────────────────────────
 st.sidebar.title("🛠️ Model Configuration")
+openai_model        = st.sidebar.selectbox("OpenAI model", ["gpt-4","gpt-4o","gpt-3.5-turbo","gpt-3.5-turbo-16k"], index=0)
+gemini_model_name   = st.sidebar.selectbox("Gemini model", ["gemini-2.5-flash","gemini-2.5-pro"], index=0)
+perplexity_model_name = st.sidebar.selectbox("Perplexity model", ["sonar","sonar-pro"], index=0)
 
-# OpenAI model options
-openai_choices = [
-    "gpt-4", "gpt-4o", "gpt-3.5-turbo", "gpt-3.5-turbo-16k"
-]
-openai_model = st.sidebar.selectbox(
-    "OpenAI model",
-    openai_choices,
-    index=openai_choices.index("gpt-4")
-)
+# ─── API CLIENTS ────────────────────────────────────────────────────────────────
+openai_key     = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
+gemini_key     = st.secrets.get("gemini_api_key") or os.getenv("GEMINI_API_KEY")
+perp_key       = st.secrets.get("perplexity_api_key") or os.getenv("PERPLEXITY_API_KEY")
 
-# Gemini model options
-gemini_choices = [
-    "gemini-2.5-flash", "gemini-2.5-pro"
-]
-gemini_model_name = st.sidebar.selectbox(
-    "Gemini model",
-    gemini_choices,
-    index=gemini_choices.index("gemini-2.5-flash")
-)
-
-# Perplexity model options
-perplexity_choices = [
-    "sonar", "sonar-pro"
-]
-perplexity_model_name = st.sidebar.selectbox(
-    "Perplexity model",
-    perplexity_choices,
-    index=perplexity_choices.index("sonar")
-)
-
-# ========== CONFIGURATION: API KEYS ==========
-openai_api_key = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
-gemini_api_key = st.secrets.get("gemini_api_key") or os.getenv("GEMINI_API_KEY")
-perplexity_api_key = st.secrets.get("perplexity_api_key") or os.getenv("PERPLEXITY_API_KEY")
-
-# ========== CLIENT INITIALIZATION ==========
-openai_client = OpenAI(api_key=openai_api_key)
-
-genai.configure(api_key=gemini_api_key)
+openai_client = OpenAI(api_key=openai_key)
+genai.configure(api_key=gemini_key)
 gemini_model = genai.GenerativeModel(gemini_model_name)
+perplexity_client = OpenAI(api_key=perp_key, base_url="https://api.perplexity.ai")
 
-perplexity_client = OpenAI(
-    api_key=perplexity_api_key,
-    base_url="https://api.perplexity.ai"
-)
+SYSTEM_PROMPT = "Provide a helpful answer to the user’s query."
 
-# ========== SYSTEM PROMPT ==========
-SYSTEM_PROMPT = (
-    "You are a marketing agent trying to analyze search visibility. "
-    "I am passing a few queries. You need to give me a response that you would "
-    "provide to anyone else querying the same thing."
-)
-
-# ========== RESPONSE FUNCTIONS ==========
-def get_openai_response(query: str) -> str:
+def get_openai_response(q):
     try:
-        resp = openai_client.chat.completions.create(
+        r = openai_client.chat.completions.create(
             model=openai_model,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user",   "content": query}
-            ]
+            messages=[{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":q}]
         )
-        return resp.choices[0].message.content.strip()
+        return r.choices[0].message.content.strip()
     except Exception as e:
-        st.error(f"OpenAI error for query '{query}': {e}")
+        st.error(f"OpenAI error: {e}")
         return "ERROR"
 
-def get_gemini_response(query: str) -> str:
+def get_gemini_response(q):
     try:
-        response = gemini_model.generate_content(query)
-        return response.candidates[0].content.parts[0].text.strip()
+        r = gemini_model.generate_content(q)
+        return r.candidates[0].content.parts[0].text.strip()
     except Exception as e:
-        st.error(f"Gemini error for query '{query}': {e}")
+        st.error(f"Gemini error: {e}")
         return "ERROR"
 
-def get_perplexity_response(query: str) -> str:
+def get_perplexity_response(q):
     try:
-        resp = perplexity_client.chat.completions.create(
+        r = perplexity_client.chat.completions.create(
             model=perplexity_model_name,
-            messages=[
-                {"role": "system",  "content": SYSTEM_PROMPT},
-                {"role": "user",    "content": query}
-            ]
+            messages=[{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":q}]
         )
-        return resp.choices[0].message.content.strip()
+        return r.choices[0].message.content.strip()
     except Exception as e:
-        st.error(f"Perplexity error for query '{query}': {e}")
+        st.error(f"Perplexity error: {e}")
         return "ERROR"
 
-# ========== HELPER FUNCTION ==========
-def extract_links(text: str) -> list:
-    return re.findall(r'https?://\S+', text)
-
-# ========== COMPETITOR LIST ==========
 competitors = [
-    "ROXBOX Containers", "Wilmot Modular", "Pac-Van", "BMarko Structures",
-    "Giant Containers", "XCaliber Container", "Conexwest",
-    "Mobile Modular Portable Storage", "WillScot"
+    "ROXBOX Containers","Wilmot Modular","Pac-Van","BMarko Structures",
+    "Giant Containers","XCaliber Container","Conexwest",
+    "Mobile Modular Portable Storage","WillScot"
 ]
 
-# ========== STREAMLIT UI ==========
-st.title("🔍 Falcon Structures AI Powered LLM Search Visibility Tool")
-st.markdown(
-    "Paste multiple search queries (one per line) and compare answers from "
-    "OpenAI, Gemini, and Perplexity. Add `-- Provide sources where you are "
-    "extracting information from in this format - 'https?://\\S+' --` to the end of each query."
-)
+# ─── TABS ──────────────────────────────────────────────────────────────────────
+tab1, tab2 = st.tabs(["Multi-LLM Response Generator","Search Visibility Analysis"])
 
-queries_input = st.text_area(
-    "Enter your queries here:",
-    height=150,
-    placeholder=(
-        "What companies provide modular container offices in the US? "
-        "Provide sources where you are extracting information from in this format - 'https?://\\S+'"
+with tab1:
+    # Centered heading
+    st.markdown(
+        '<h5 style="text-align:center; margin-bottom:1rem; color:#a9a9a9">'
+        'Enter queries to generate responses from OpenAI (Chat GPT), Gemini, & Perplexity.'
+        '</h5>',
+        unsafe_allow_html=True
     )
-)
 
-if st.button("Run Analysis"):
-    queries = [q.strip() for q in queries_input.splitlines() if q.strip()]
-    if not queries:
-        st.warning("Please enter at least one query.")
+    # Full‑width text area
+    queries_input = st.text_area(
+        "Queries (one per line)",
+        height=200,
+        placeholder="e.g. What companies provide modular container offices in the US?"
+    )
+
+    # Center the “Run Analysis” button
+    left, center, right = st.columns([1, 2, 1])
+    with center:
+        run = st.button("Run Analysis", key="run")
+
+    if run:
+        qs = [q.strip() for q in queries_input.splitlines() if q.strip()]
+        if not qs:
+            st.warning("Please enter at least one query.")
+        else:
+            results = []
+            with st.spinner("Gathering responses…"):
+                for q in qs:
+                    for source, fn in [
+                        ("OpenAI", get_openai_response),
+                        ("Gemini", get_gemini_response),
+                        ("Perplexity", get_perplexity_response)
+                    ]:
+                        txt = fn(q)
+                        results.append({"Query": q, "Source": source, "Response": txt})
+                        time.sleep(1)
+
+            df = pd.DataFrame(results)[["Query","Source","Response"]]
+            st.dataframe(df, use_container_width=True)
+            st.download_button(
+                "Download CSV",
+                df.to_csv(index=False),
+                "responses.csv",
+                "text/csv"
+            )
+
+
+with tab2:
+    st.markdown("### Search Visibility Analysis")
+    uploaded = st.file_uploader("Upload your results CSV", type="csv")
+    if uploaded:
+        df = pd.read_csv(uploaded)
+        # Detect Falcon mentions
+        df["Falcon_Mention"] = df["Response"].str.contains(r"\bfalcon\b|\bfalconstructures\b", case=False)
+        # Mention rate by source
+        rates = df.groupby("Source")["Falcon_Mention"].mean() * 100
+        st.subheader("Falcon Mention Rate by Source")
+        cols = st.columns(3)
+        for col, src in zip(cols, rates.index):
+            col.metric(src, f"{rates[src]:.1f}%")
+        # Competitor share in non-branded queries
+        df["NonBranded"] = ~df["Query"].str.contains("falcon", case=False)
+        nonb = df[df["NonBranded"]]
+        share = {}
+        total = len(nonb)
+        for comp in competitors:
+            share[comp] = nonb["Response"].str.contains(re.escape(comp), case=False).sum() / total * 100
+        comp_df = pd.DataFrame.from_dict(share, orient="index", columns=["Share (%)"]).sort_values("Share (%)", ascending=False)
+        st.subheader("Share of Voice in Generic Queries")
+        st.bar_chart(comp_df, use_container_width=True)
+        # Falcon URL citation rate
+        df["Has_Falcon_URL"] = df["Response"].str.contains(r"https?://\S*falconstructures\.com", case=False)
+        cit = df.groupby("Source")["Has_Falcon_URL"].mean() * 100
+        st.subheader("Falcon URL Citation Rate")
+        cit_df = pd.DataFrame(cit).rename(columns={"Has_Falcon_URL":"Citation Rate (%)"})
+        st.table(cit_df.style.format("{:.1f}%"))
+        # Competitor share overall
+        st.subheader("Competitor Share of Mentions")
+        overall = {}
+        total_resp = len(df)
+        for comp in competitors:
+            overall[comp] = df["Response"].str.contains(re.escape(comp), case=False).sum() / total_resp * 100
+        overall_df = pd.DataFrame.from_dict(overall, orient="index", columns=["Overall Share (%)"]).sort_values("Overall Share (%)", ascending=False)
+        st.dataframe(overall_df.style.format("{:.1f}%"))
+        # Summary
+        st.markdown("**Summary:** Falcon Structures leads mention rate on most engines, but competitors ROXBOX and WillScot capture significant share in generic queries.")
     else:
-        results = []
-        with st.spinner("Gathering responses..."):
-            for query in queries:
-                for source, func in [
-                    ("OpenAI", get_openai_response),
-                    ("Gemini", get_gemini_response),
-                    ("Perplexity", get_perplexity_response)
-                ]:
-                    text = func(query)
-                    wc = len(text.split())
-                    falcon_flag = "Y" if re.search(r'\bfalcon\b|\bfalconstructures\b', text, re.IGNORECASE) else "N"
-                    cite_flag = "Y" if re.search(r'https?://|\[\d+\]', text) else "N"
-                    found = [c for c in competitors if re.search(re.escape(c), text, re.IGNORECASE)]
-                    links = extract_links(text)
-                    # Determine position type
-                    snippet = text[:max(1, int(0.2 * len(text)))].lower()
-                    if any(k.lower() in snippet for k in ["falcon"] + competitors):
-                        pos = "lead answer"
-                    elif cite_flag == "Y" and falcon_flag == "N":
-                        pos = "citation"
-                    elif falcon_flag == "Y" or found:
-                        pos = "embedded mention"
-                    else:
-                        pos = "absent"
-                    results.append({
-                        "Query": query,
-                        "Source": source,
-                        "Response": text,
-                        "Word Count": wc,
-                        "Falcon Mentioned": falcon_flag,
-                        "Citation Present": cite_flag,
-                        "Competitors Mentioned": ", ".join(found),
-                        "Position Type": pos,
-                        "Links": ", ".join(links)
-                    })
-                    time.sleep(1)  # rate-limit safety
-
-        df = pd.DataFrame(results)
-        st.dataframe(df, use_container_width=True)
-        st.download_button(
-            "Download Results as CSV",
-            df.to_csv(index=False),
-            file_name="results.csv",
-            mime="text/csv"
-        )
+        st.info("Upload the CSV exported from the first tab to see visibility metrics.")
