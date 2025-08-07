@@ -226,5 +226,18 @@ with tab2:
         st.subheader("⚠️ Competitor-Only Gaps (No Falcon Mention)")
         st.dataframe(gaps.reset_index(drop=True), use_container_width=True)
 
+        mask = (df_main['Falcon Mentioned'] == 'N') & df_main['Competitors Mentioned'].notna() & (df_main['Competitors Mentioned'].str.strip() != '')
+        gaps = df_main[mask][["Source", "Query", "Competitors Mentioned", "Response"]]
+        st.subheader("⚠️ Competitor-Only Gaps (No Falcon Mention)")
+        st.caption("Cases where one or more competitors are mentioned but Falcon is not.")
+        st.dataframe(gaps.reset_index(drop=True), use_container_width=True)
+
+        st.subheader("📈 Response Word Count Distribution")
+        st.caption("Visualizes how long the responses are across sources.")
+        fig, ax = plt.subplots(figsize=(6, 3))
+        sns.boxplot(data=df_main, x="Source", y="Response Word-Count", ax=ax, palette="pastel")
+        ax.set_title("Distribution of Response Lengths by Source")
+        st.pyplot(fig)
+
     else:
         st.info("Please upload the raw CSV to begin analysis.")
