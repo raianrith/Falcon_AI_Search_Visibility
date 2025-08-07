@@ -241,68 +241,7 @@ with tab2:
             st.metric("Perplexity", f"{mention_rate.get('Perplexity', 0)}%")
         with col6:
             st.metric("OpenAI", f"{mention_rate.get('OpenAI', 0)}%")
-        # TEST COMPLETE
         
-        st.subheader("📊 Mention Rates")
-        st.caption("Percentage of responses from each LLM that mention Falcon at least once.")
-        overall_rate = df_main.groupby('Source')['Falcon Mentioned'].apply(lambda x: (x == 'Y').mean() * 100).round(1)
-        cols = st.columns(len(overall_rate))
-        for col, src in zip(cols, overall_rate.index):
-            col.metric(f"{src} Mentions Falcon", f"{overall_rate[src]}%")
-
-        mention_rate = df_main.groupby(['Source', 'Branded Query'])['Falcon Mentioned'].apply(lambda x: (x == 'Y').mean() * 100).reset_index(name='Mention Rate (%)')
-        pivot = mention_rate.pivot(index='Source', columns='Branded Query', values='Mention Rate (%)').rename(columns={'Y': 'Branded (%)', 'N': 'Non‑Branded (%)'}).round(1)
-        st.subheader("📈 Branded vs Non-Branded Mention Rates")
-        st.caption("Breakdown of Falcon mention rate in branded vs non-branded queries across LLMs.")
-        st.dataframe(pivot.reset_index())
-
-        # Falcon URL Citation Rate
-        import matplotlib.pyplot as plt
-        import seaborn as sns
-        
-        # Compute citation rate
-        df_main['Falcon URL Cited'] = df_main['Response'].str.contains(
-            r"https?://(?:www\.)?falconstructures\.com", 
-            case=False, regex=True, na=False
-        )
-        
-        cit_rate = (
-            df_main.groupby("Source")["Falcon URL Cited"]
-            .mean().mul(100).round(1).reset_index()
-        ).sort_values("Falcon URL Cited", ascending=True)
-        
-        # Streamlit chart section
-        st.subheader("🔗 Falcon URL Citation Rate")
-        st.caption("Percentage of responses from each LLM that include a link to falconstructures.com.")
-        
-        # Better balance for sharpness and clarity
-        fig, ax = plt.subplots(figsize=(5, 3.5))  # Bigger size, no DPI needed
-        
-        # Lollipop stem lines
-        ax.hlines(y=cit_rate["Source"], xmin=0, xmax=cit_rate["Falcon URL Cited"], color="gray", linewidth=1)
-        
-        # Lollipop dots
-        ax.plot(cit_rate["Falcon URL Cited"], cit_rate["Source"], 'o', color="#2a9d8f", markersize=8)
-        
-        # Add text annotations
-        for i, (val, label) in enumerate(zip(cit_rate["Falcon URL Cited"], cit_rate["Source"])):
-            ax.text(val + 1, label, f"{val:.1f}%", va='center', fontsize=10)
-        
-        # Styling
-        ax.set_xlim(0, max(cit_rate["Falcon URL Cited"]) + 10)
-        ax.set_xlabel("Citation Rate (%)", fontsize=10)
-        ax.set_ylabel("")
-        ax.tick_params(axis='x', labelsize=9)
-        ax.tick_params(axis='y', labelsize=9)
-        
-        # Clean up borders
-        for spine in ax.spines.values():
-            spine.set_visible(False)
-        
-        fig.tight_layout()
-        st.pyplot(fig)
-
-
 
         df_main['sentiment_score'] = df_main['Response'].fillna('').apply(lambda t: ((sia.polarity_scores(t)['compound'] + 1) / 2) * 9 + 1)
         sentiment_df = df_main.groupby("Source")["sentiment_score"].mean().round(1).reset_index()
