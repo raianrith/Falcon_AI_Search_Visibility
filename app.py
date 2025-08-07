@@ -206,32 +206,44 @@ with tab2:
         st.caption("Breakdown of Falcon mention rate in branded vs non-branded queries across LLMs.")
         st.dataframe(pivot.reset_index())
 
-        df_main['Falcon URL Cited'] = df_main['Response'].str.contains(r"https?://(?:www\.)?falconstructures\.com", case=False, regex=True, na=False )
-        cit_rate = df_main.groupby("Source")["Falcon URL Cited"].mean().mul(100).round(1).reset_index()
+        # Falcon URL Citation Rate
+        df_main['Falcon URL Cited'] = df_main['Response'].str.contains(
+            r"https?://(?:www\.)?falconstructures\.com", 
+            case=False, regex=True, na=False
+        )
+        
+        cit_rate = (
+            df_main.groupby("Source")["Falcon URL Cited"]
+            .mean().mul(100).round(1).reset_index()
+        )
+        
         st.subheader("🔗 Falcon URL Citation Rate")
         st.caption("Percentage of responses from each LLM that include a link to falconstructures.com.")
         
-        # Smaller figure size
-        fig, ax = plt.subplots(figsize=(2, 1), dpi=200)
+        # 📏 Small chart with sharp resolution
+        fig, ax = plt.subplots(figsize=(2, 1), dpi=300)
         
-        # Barplot
+        # 🎨 Barplot
         sns.barplot(data=cit_rate, x="Source", y="Falcon URL Cited", palette="Set2", ax=ax)
         
-        # Annotations (smaller + not bold)
+        # 📍 Add smaller, non-bold value labels
         for index, row in cit_rate.iterrows():
             ax.text(index, row["Falcon URL Cited"] + 1, f"{row['Falcon URL Cited']:.1f}%", 
-                    ha='center', fontsize=3, fontweight='normal')
+                    ha='center', fontsize=6, fontweight='normal', color='black')
         
-        # Axis formatting
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.set_ylabel("Citation Rate (%)", fontsize=4, fontweight='normal')
+        # 🎯 Minimal, aesthetic styling
+        ax.set_ylabel("Citation Rate (%)", fontsize=6, fontweight='normal')
         ax.set_xlabel("")
-        ax.tick_params(axis='x', labelsize=5)
-        ax.tick_params(axis='y', labelsize=5)
+        ax.tick_params(axis='x', labelsize=6)
+        ax.tick_params(axis='y', labelsize=6)
+        
+        # 🧼 Remove top/right and thin out spines
+        for spine in ['top', 'right', 'left', 'bottom']:
+            ax.spines[spine].set_linewidth(0.4)
         
         fig.tight_layout()
         st.pyplot(fig)
+
 
 
 
