@@ -208,13 +208,26 @@ with tab2:
 
         df_main['Falcon URL Cited'] = df_main['Response'].str.contains(r"https?://(?:www\.)?falconstructures\.com", case=False, regex=True, na=False)
         cit_rate = df_main.groupby("Source")["Falcon URL Cited"].mean().mul(100).round(1).reset_index()
+        
         st.subheader("🔗 Falcon URL Citation Rate")
         st.caption("Percentage of responses from each LLM that include a link to falconstructures.com.")
-        fig, ax = plt.subplots(figsize=(5, 3.5))
+        
+        # Smaller, borderless chart
+        fig, ax = plt.subplots(figsize=(4.5, 2.8))
         sns.barplot(data=cit_rate, x="Source", y="Falcon URL Cited", palette="Set2", ax=ax)
+        
+        # Remove top and right border lines (spines)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        
+        # Annotate values
         for index, row in cit_rate.iterrows():
             ax.text(index, row["Falcon URL Cited"] + 1, f"{row['Falcon URL Cited']:.1f}%", ha='center')
+        
         ax.set_ylabel("Citation Rate (%)")
+        ax.set_xlabel("")
+        fig.tight_layout()
+        
         st.pyplot(fig)
 
         df_main['sentiment_score'] = df_main['Response'].fillna('').apply(lambda t: ((sia.polarity_scores(t)['compound'] + 1) / 2) * 9 + 1)
