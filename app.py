@@ -5,6 +5,12 @@ import re
 import pandas as pd
 import time
 import os
+import nltk
+import matplotlib.pyplot as plt
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
+nltk.download('vader_lexicon')
+sia = SentimentIntensityAnalyzer()
 
 # ─── PAGE CONFIG & GLOBAL CSS ─────────────────────────────────────────────────
 st.set_page_config(page_title="Falcon Structures LLM Tool", layout="wide")
@@ -115,32 +121,21 @@ def get_perplexity_response(q):
         st.error(f"Perplexity error: {e}")
         return "ERROR"
 
-competitors = [
-    "ROXBOX Containers","Wilmot Modular","Pac-Van","BMarko Structures",
-    "Giant Containers","XCaliber Container","Conexwest",
-    "Mobile Modular Portable Storage","WillScot"
-]
-
 # ─── TABS ──────────────────────────────────────────────────────────────────────
 tab1, tab2 = st.tabs(["Multi-LLM Response Generator","Search Visibility Analysis"])
 
 with tab1:
-    # Centered heading
     st.markdown(
         '<h5 style="text-align:center; margin-bottom:1rem; color:#a9a9a9">'
         'Enter queries to generate responses from OpenAI (Chat GPT), Gemini, & Perplexity.'
         '</h5>',
         unsafe_allow_html=True
     )
-
-    # Full‑width text area
     queries_input = st.text_area(
         "Queries (one per line)",
         height=200,
         placeholder="e.g. What companies provide modular container offices in the US?"
     )
-
-    # Center the “Run Analysis” button
     left, center, right = st.columns([1, 2, 1])
     with center:
         run = st.button("Run Analysis", key="run")
@@ -171,45 +166,61 @@ with tab1:
                 "text/csv"
             )
 
-
 with tab2:
     st.markdown("### Search Visibility Analysis")
     uploaded = st.file_uploader("Upload your results CSV", type="csv")
+
     if uploaded:
-        df = pd.read_csv(uploaded)
-        # Detect Falcon mentions
-        df["Falcon_Mention"] = df["Response"].str.contains(r"\bfalcon\b|\bfalconstructures\b", case=False)
-        # Mention rate by source
-        rates = df.groupby("Source")["Falcon_Mention"].mean() * 100
-        st.subheader("Falcon Mention Rate by Source")
-        cols = st.columns(3)
-        for col, src in zip(cols, rates.index):
-            col.metric(src, f"{rates[src]:.1f}%")
-        # Competitor share in non-branded queries
-        df["NonBranded"] = ~df["Query"].str.contains("falcon", case=False)
-        nonb = df[df["NonBranded"]]
-        share = {}
-        total = len(nonb)
-        for comp in competitors:
-            share[comp] = nonb["Response"].str.contains(re.escape(comp), case=False).sum() / total * 100
-        comp_df = pd.DataFrame.from_dict(share, orient="index", columns=["Share (%)"]).sort_values("Share (%)", ascending=False)
-        st.subheader("Share of Voice in Generic Queries")
-        st.bar_chart(comp_df, use_container_width=True)
-        # Falcon URL citation rate
-        df["Has_Falcon_URL"] = df["Response"].str.contains(r"https?://\S*falconstructures\.com", case=False)
-        cit = df.groupby("Source")["Has_Falcon_URL"].mean() * 100
-        st.subheader("Falcon URL Citation Rate")
-        cit_df = pd.DataFrame(cit).rename(columns={"Has_Falcon_URL":"Citation Rate (%)"})
-        st.table(cit_df.style.format("{:.1f}%"))
-        # Competitor share overall
-        st.subheader("Competitor Share of Mentions")
-        overall = {}
-        total_resp = len(df)
-        for comp in competitors:
-            overall[comp] = df["Response"].str.contains(re.escape(comp), case=False).sum() / total_resp * 100
-        overall_df = pd.DataFrame.from_dict(overall, orient="index", columns=["Overall Share (%)"]).sort_values("Overall Share (%)", ascending=False)
-        st.dataframe(overall_df.style.format("{:.1f}%"))
-        # Summary
-        st.markdown("**Summary:** Falcon Structures leads mention rate on most engines, but competitors ROXBOX and WillScot capture significant share in generic queries.")
+        df_main = pd.read_csv(uploaded)
+
+        competitors = ["ROXBOX", "Wilmot", "Pac‑Van", "BMarko", "Giant", "XCaliber", "Conexwest", "Mobile Modular", "WillScot"]
+        pattern = re.compile(r'\b(' + '|'.join(re.escape(c) for c in competitors) + r')\b', flags=re.IGNORECASE)
+
+        def extract_competitors(text):
+            matches = pattern.findall(text or "")
+            found = []
+            for m in matches:
+                for comp in competitors:
+                    if m.lower() == comp.lower():
+                        found.append(comp)
+            return ", ".join(sorted(set(found)))
+
+        df_main["Competitors Mentioned"] = df_main["Response"].apply(extract_competitors)
+        df_main['Branded Query'] = df_main['Query'].str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
+        df_main['Falcon Mentioned'] = df_main['Response'].str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
+        df_main['Sources Cited'] = df_main['Response'].str.findall(r'(https?://\S+)').apply(lambda lst: ', '.join(lst) if lst else '')
+        df_main['Response Word-Count'] = df_main['Response'].astype(str).str.split().str.len()
+        df_main['Query Number'] = pd.factorize(df_main['Query'])[0] + 1
+        df_main = df_main[["Query Number", "Query", "Source", "Response", "Response Word-Count", "Branded Query", "Falcon Mentioned", "Competitors Mentioned", "Sources Cited"]]
+
+        st.subheader("🧹 Cleaned Dataset")
+        st.dataframe(df_main, use_container_width=True, height=400)
+        st.download_button("Download Cleaned CSV", df_main.to_csv(index=False), "cleaned_responses.csv", "text/csv")
+
+        st.subheader("📊 Mention Rates")
+        overall_rate = df_main.groupby('Source')['Falcon Mentioned'].apply(lambda x: (x == 'Y').mean() * 100).round(1)
+        cols = st.columns(len(overall_rate))
+        for col, src in zip(cols, overall_rate.index):
+            col.metric(f"{src} Mentions Falcon", f"{overall_rate[src]}%")
+
+        mention_rate = df_main.groupby(['Source', 'Branded Query'])['Falcon Mentioned'].apply(lambda x: (x == 'Y').mean() * 100).reset_index(name='Mention Rate (%)')
+        pivot = mention_rate.pivot(index='Source', columns='Branded Query', values='Mention Rate (%)').rename(columns={'Y': 'Branded (%)', 'N': 'Non‑Branded (%)'}).round(1)
+        st.dataframe(pivot.reset_index())
+
+        df_main['Falcon URL Cited'] = df_main['Response'].str.contains(r"https?://(?:www\\.)?falconstructures\\.com", case=False, regex=True, na=False)
+        cit_rate = df_main.groupby("Source")["Falcon URL Cited"].mean().mul(100).round(1)
+        st.subheader("🔗 Falcon URL Citation Rate")
+        st.bar_chart(cit_rate)
+
+        df_main['sentiment_score'] = df_main['Response'].fillna('').apply(lambda t: ((sia.polarity_scores(t)['compound'] + 1) / 2) * 9 + 1)
+        sentiment_df = df_main.groupby("Source")["sentiment_score"].mean().round(1)
+        st.subheader("💬 Average Sentiment per LLM")
+        st.bar_chart(sentiment_df)
+
+        mask = (df_main['Falcon Mentioned'] == 'N') & df_main['Competitors Mentioned'].notna() & (df_main['Competitors Mentioned'].str.strip() != '')
+        gaps = df_main[mask][["Source", "Query", "Competitors Mentioned"]]
+        st.subheader("⚠️ Competitor-Only Gaps (No Falcon Mention)")
+        st.dataframe(gaps.reset_index(drop=True), use_container_width=True)
+
     else:
-        st.info("Upload the CSV exported from the first tab to see visibility metrics.")
+        st.info("Please upload the raw CSV to begin analysis.")
