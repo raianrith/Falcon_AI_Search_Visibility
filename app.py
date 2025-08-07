@@ -1,3 +1,5 @@
+# Falcon AI-Powered LLM Search Visibility Tool
+
 import streamlit as st
 from openai import OpenAI
 import google.generativeai as genai
@@ -16,7 +18,6 @@ sia = SentimentIntensityAnalyzer()
 # ─── PAGE CONFIG & GLOBAL CSS ─────────────────────────────────────────────────
 st.set_page_config(page_title="Falcon Structures LLM Tool", layout="wide")
 
-# Custom CSS
 st.markdown("""
 <style>
 div[data-baseweb="tab-list"] {
@@ -66,13 +67,13 @@ st.markdown("""
 st.markdown("""
 <div style='text-align:center; padding:1rem 0;'>
   <img src='https://github.com/raianrith/AI-Client-Research-Tool/blob/main/Weidert_Logo_primary-logomark-antique.png?raw=true' width='60'/>
-  <h1>Falcon AI‑Powered LLM Search Visibility Tool</h1>
-  <h4 style='color:#ccc;'>Created by Weidert Group, Inc.</h4>
+  <h1>Falcon AI Powered LLM Search Visibility Tool</h1>
+  <h4 style='color:#ccc;'>Created by Weidert\u00a0Group,\u00a0Inc.</h4>
 </div>
 """, unsafe_allow_html=True)
 
 # ─── TABS ──────────────────────────────────────────────────────────────────────
-tab1, tab2 = st.tabs(["Multi-LLM Response Generator","Search Visibility Analysis"])
+tab1, tab2 = st.tabs(["Multi-LLM Response Generator", "Search Visibility Analysis"])
 
 with tab1:
     st.markdown(
@@ -81,22 +82,18 @@ with tab1:
         '</h5>',
         unsafe_allow_html=True
     )
-    queries_input = st.text_area(
-        "Queries (one per line)",
-        height=200,
-        placeholder="e.g. What companies provide modular container offices in the US?"
-    )
+    queries_input = st.text_area("Queries (one per line)", height=200, placeholder="e.g. What companies provide modular container offices in the US?")
     left, center, right = st.columns([1, 2, 1])
     with center:
         run = st.button("Run Analysis", key="run")
 
-    openai_model        = st.sidebar.selectbox("OpenAI model", ["gpt-4","gpt-4o","gpt-3.5-turbo","gpt-3.5-turbo-16k"], index=0)
-    gemini_model_name   = st.sidebar.selectbox("Gemini model", ["gemini-2.5-flash","gemini-2.5-pro"], index=0)
-    perplexity_model_name = st.sidebar.selectbox("Perplexity model", ["sonar","sonar-pro"], index=0)
+    openai_model = st.sidebar.selectbox("OpenAI model", ["gpt-4", "gpt-4o", "gpt-3.5-turbo", "gpt-3.5-turbo-16k"], index=0)
+    gemini_model_name = st.sidebar.selectbox("Gemini model", ["gemini-2.5-flash", "gemini-2.5-pro"], index=0)
+    perplexity_model_name = st.sidebar.selectbox("Perplexity model", ["sonar", "sonar-pro"], index=0)
 
-    openai_key     = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
-    gemini_key     = st.secrets.get("gemini_api_key") or os.getenv("GEMINI_API_KEY")
-    perp_key       = st.secrets.get("perplexity_api_key") or os.getenv("PERPLEXITY_API_KEY")
+    openai_key = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
+    gemini_key = st.secrets.get("gemini_api_key") or os.getenv("GEMINI_API_KEY")
+    perp_key = st.secrets.get("perplexity_api_key") or os.getenv("PERPLEXITY_API_KEY")
 
     openai_client = OpenAI(api_key=openai_key)
     genai.configure(api_key=gemini_key)
@@ -109,7 +106,7 @@ with tab1:
         try:
             r = openai_client.chat.completions.create(
                 model=openai_model,
-                messages=[{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":q}]
+                messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": q}]
             )
             return r.choices[0].message.content.strip()
         except Exception as e:
@@ -128,7 +125,7 @@ with tab1:
         try:
             r = perplexity_client.chat.completions.create(
                 model=perplexity_model_name,
-                messages=[{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":q}]
+                messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": q}]
             )
             return r.choices[0].message.content.strip()
         except Exception as e:
@@ -141,7 +138,7 @@ with tab1:
             st.warning("Please enter at least one query.")
         else:
             results = []
-            with st.spinner("Gathering responses…"):
+            with st.spinner("Gathering responses..."):
                 for q in qs:
                     for source, fn in [
                         ("OpenAI", get_openai_response),
@@ -152,14 +149,9 @@ with tab1:
                         results.append({"Query": q, "Source": source, "Response": txt})
                         time.sleep(1)
 
-            df = pd.DataFrame(results)[["Query","Source","Response"]]
+            df = pd.DataFrame(results)[["Query", "Source", "Response"]]
             st.dataframe(df, use_container_width=True)
-            st.download_button(
-                "Download CSV",
-                df.to_csv(index=False),
-                "responses.csv",
-                "text/csv"
-            )
+            st.download_button("Download CSV", df.to_csv(index=False), "responses.csv", "text/csv")
 
 with tab2:
     st.markdown("### Search Visibility Analysis")
@@ -169,7 +161,7 @@ with tab2:
         df_main = pd.read_csv(uploaded)
 
         competitors = ["ROXBOX", "Wilmot", "Pac‑Van", "BMarko", "Giant", "XCaliber", "Conexwest", "Mobile Modular", "WillScot"]
-        pattern = re.compile(r'\b(' + '|'.join(re.escape(c) for c in competitors) + r')\b', flags=re.IGNORECASE)
+        pattern = re.compile(r'\\b(' + '|'.join(re.escape(c) for c in competitors) + r')\\b', flags=re.IGNORECASE)
 
         def extract_competitors(text):
             matches = pattern.findall(text or "")
@@ -182,8 +174,8 @@ with tab2:
 
         df_main["Competitors Mentioned"] = df_main["Response"].apply(extract_competitors)
         df_main['Branded Query'] = df_main['Query'].str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
-        df_main['Falcon Mentioned'] = df_main['Response'].str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
-        df_main['Sources Cited'] = df_main['Response'].str.findall(r'(https?://\S+)').apply(lambda lst: ', '.join(lst) if lst else '')
+        df_main['Falcon Mentioned'] = df_main['Response'].str.contains(r"\\bfalcon\\b", case=False, na=False).map({True: 'Y', False: 'N'})
+        df_main['Sources Cited'] = df_main['Response'].str.findall(r'(https?://\\S+)').apply(lambda lst: ', '.join(lst) if lst else '')
         df_main['Response Word-Count'] = df_main['Response'].astype(str).str.split().str.len()
         df_main['Query Number'] = pd.factorize(df_main['Query'])[0] + 1
         df_main = df_main[["Query Number", "Query", "Source", "Response", "Response Word-Count", "Branded Query", "Falcon Mentioned", "Competitors Mentioned", "Sources Cited"]]
@@ -193,33 +185,14 @@ with tab2:
         st.dataframe(df_main, use_container_width=True, height=400)
         st.download_button("Download Cleaned CSV", df_main.to_csv(index=False), "cleaned_responses.csv", "text/csv")
 
-        # TEST
         st.header("📊 Falcon Mentions Summary")
-    
-        # --- Falcon URL Citation Rate ---
-        df_main['Falcon URL Cited'] = df_main['Response'].str.contains(
-            r"https?://(?:www\.)?falconstructures\.com", 
-            case=False, regex=True, na=False
-        )
-    
-        cit_rate = (
-            df_main.groupby("Source")["Falcon URL Cited"]
-            .mean().mul(100).round(1)
-            .to_dict()
-        )
-    
-        # --- Falcon Mentions in Text (not necessarily a URL) ---
-        df_main['Falcon Mentioned'] = df_main['Response'].str.contains(
-            r"falcon\s?structures", case=False, na=False
-        )
-    
-        mention_rate = (
-            df_main.groupby("Source")["Falcon Mentioned"]
-            .mean().mul(100).round(1)
-            .to_dict()
-        )
-    
-        # --- Display KPI-style metrics ---
+
+        df_main['Falcon URL Cited'] = df_main['Response'].str.contains(r"https?://(?:www\\.)?falconstructures\\.com", case=False, regex=True, na=False)
+        cit_rate = df_main.groupby("Source")["Falcon URL Cited"].mean().mul(100).round(1).to_dict()
+
+        df_main['Falcon Mentioned'] = df_main['Response'].str.contains(r"\\bfalcon\\b", case=False, na=False)
+        mention_rate = df_main.groupby("Source")["Falcon Mentioned"].mean().mul(100).round(1).to_dict()
+
         st.subheader("🔗 Falcon URL Citation Rate")
         st.caption("Percentage of responses from each LLM that include a link to falconstructures.com.")
         col1, col2, col3 = st.columns(3)
@@ -229,11 +202,11 @@ with tab2:
             st.metric("Perplexity", f"{cit_rate.get('Perplexity', 0)}%")
         with col3:
             st.metric("OpenAI", f"{cit_rate.get('OpenAI', 0)}%")
-    
-        st.markdown("---")  # Divider
-    
+
+        st.markdown("---")
+
         st.subheader("📣 Falcon Mention Rate")
-        st.caption("Percentage of responses from each LLM that mention Falcon Structures (regardless of link).")
+        st.caption("Percentage of responses from each LLM that mention Falcon (regardless of link).")
         col4, col5, col6 = st.columns(3)
         with col4:
             st.metric("Gemini", f"{mention_rate.get('Gemini', 0)}%")
@@ -241,9 +214,9 @@ with tab2:
             st.metric("Perplexity", f"{mention_rate.get('Perplexity', 0)}%")
         with col6:
             st.metric("OpenAI", f"{mention_rate.get('OpenAI', 0)}%")
-        
-        st.markdown("---")  # Divider
-        
+
+        st.markdown("---")
+
         df_main['sentiment_score'] = df_main['Response'].fillna('').apply(lambda t: ((sia.polarity_scores(t)['compound'] + 1) / 2) * 9 + 1)
         sentiment_df = df_main.groupby("Source")["sentiment_score"].mean().round(1).reset_index()
         st.subheader("💬 Average Sentiment per LLM")
@@ -255,17 +228,16 @@ with tab2:
         ax2.set_ylabel("Avg Sentiment (1–10)")
         st.pyplot(fig2)
 
-        st.markdown("---")  # Divider
-        
+        st.markdown("---")
+
         mask = (df_main['Falcon Mentioned'] == 'N') & df_main['Competitors Mentioned'].notna() & (df_main['Competitors Mentioned'].str.strip() != '')
         gaps = df_main[mask][["Source", "Query", "Response", "Competitors Mentioned"]]
         st.subheader("⚠️ Competitor-Only Gaps (No Falcon Mention)")
         st.caption("Cases where one or more competitors are mentioned but Falcon is not.")
         st.dataframe(gaps.reset_index(drop=True), use_container_width=True)
 
-        st.markdown("---")  # Divider
-        
-        # ─── New Metric: Word Count Distribution ─────────────────────────────────
+        st.markdown("---")
+
         st.subheader("📏 Response Length Distribution")
         st.caption("Histogram showing how long LLM responses are across sources.")
         fig3, ax3 = plt.subplots(figsize=(6, 3.5))
@@ -273,6 +245,5 @@ with tab2:
         ax3.set_xlabel("Word Count")
         ax3.set_ylabel("Number of Responses")
         st.pyplot(fig3)
-
     else:
         st.info("Please upload the raw CSV to begin analysis.")
