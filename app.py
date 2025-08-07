@@ -185,14 +185,16 @@ with tab2:
                         found.append(comp)
             return ", ".join(sorted(set(found)))
 
+        from datetime import datetime
+        df_main['Date'] = datetime.today().date()
         df_main["Competitors Mentioned"] = df_main["Response"].apply(extract_competitors)
         df_main['Branded Query'] = df_main['Query'].str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
         df_main['Falcon Mentioned'] = df_main['Response'].str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
         df_main['Sources Cited'] = df_main['Response'].str.findall(r'(https?://\S+)').apply(lambda lst: ', '.join(lst) if lst else '')
         df_main['Response Word-Count'] = df_main['Response'].astype(str).str.split().str.len()
         df_main['Query Number'] = pd.factorize(df_main['Query'])[0] + 1
-        df_main = df_main[["Query Number", "Query", "Source", "Response", "Response Word-Count", "Branded Query", "Falcon Mentioned", "Competitors Mentioned", "Sources Cited"]]
-
+        df_main = df_main[["Date", "Query Number", "Query", "Source", "Response", "Response Word-Count", "Branded Query", "Falcon Mentioned", "Competitors Mentioned", "Sources Cited"]]
+        
         st.subheader("🧹 Cleaned Dataset")
         st.dataframe(df_main, use_container_width=True, height=400)
         st.download_button("Download Cleaned CSV", df_main.to_csv(index=False), "cleaned_responses.csv", "text/csv")
