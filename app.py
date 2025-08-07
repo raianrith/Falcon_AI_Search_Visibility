@@ -238,9 +238,6 @@ with tab2:
         st.dataframe(gaps.reset_index(drop=True), use_container_width=True)
 
         st.divider()
-
-        st.subheader("🏷️ Brand Share — Branded Queries")
-        st.caption("Of all responses to Branded queries (those containing “Falcon”), what percentage of brand mentions go to each company?")
         
         def compute_brand_share(df, query_type='Y'):
             df_subset = df[df['Branded Query'] == query_type].copy()
