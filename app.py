@@ -416,5 +416,5 @@ with tab3:
     st.line_chart(sent_pivot, height=250, use_container_width=True)
 
 
-    else:
-        st.info("Please upload the raw CSV to begin analysis.")
+else:
+    st.info("Please upload the raw CSV to begin analysis.")
