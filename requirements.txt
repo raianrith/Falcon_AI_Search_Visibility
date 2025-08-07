@@ -5,3 +5,6 @@ pandas
 matplotlib
 nltk
 seaborn
+gspread
+oauth2client
+gspread-dataframe
