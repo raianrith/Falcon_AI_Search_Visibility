@@ -123,7 +123,7 @@ def get_perplexity_response(q):
 
 # ─── TABS ──────────────────────────────────────────────────────────────────────
 
-tab1, tab2, tab3 = = st.tabs(["Multi-LLM Response Generator", "Search Visibility Analysis", "Time Series Analysis"])
+tab1, tab2, tab3 = st.tabs(["Multi-LLM Response Generator", "Search Visibility Analysis", "Time Series Analysis"])
 
 with tab1:
     st.markdown(
