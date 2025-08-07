@@ -7,21 +7,24 @@ import time
 import os
 import nltk
 import matplotlib.pyplot as plt
-import seaborn as sns
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 nltk.download('vader_lexicon')
 sia = SentimentIntensityAnalyzer()
 
+# ─── PAGE CONFIG & GLOBAL CSS ─────────────────────────────────────────────────
 st.set_page_config(page_title="Falcon Structures LLM Tool", layout="wide")
 
 # Custom CSS
 st.markdown("""
 <style>
+/* Center the tabs */
 div[data-baseweb="tab-list"] {
     display: flex !important;
     justify-content: center !important;
 }
+
+/* (Your existing tab styles follow…) */
 div[data-baseweb="tab-list"] button[role="tab"] {
     background-color: #fff !important;
     color: #000 !important;
@@ -61,22 +64,25 @@ st.markdown("""
   </style>
 """, unsafe_allow_html=True)
 
+# ─── LOGO & HEADER ─────────────────────────────────────────────────────────────
 st.markdown("""
 <div style='text-align:center; padding:1rem 0;'>
   <img src='https://github.com/raianrith/AI-Client-Research-Tool/blob/main/Weidert_Logo_primary-logomark-antique.png?raw=true' width='60'/>
   <h1>Falcon AI‑Powered LLM Search Visibility Tool</h1>
-  <h4 style='color:#ccc;'>Created by Weidert Group, Inc.</h4>
+  <h4 style='color:#ccc;'>Created by Weidert Group, Inc.</h4>
 </div>
 """, unsafe_allow_html=True)
 
+# ─── SIDEBAR: MODEL CONFIGURATION ─────────────────────────────────────────────
 st.sidebar.title("🛠️ Model Configuration")
-openai_model = st.sidebar.selectbox("OpenAI model", ["gpt-4","gpt-4o","gpt-3.5-turbo","gpt-3.5-turbo-16k"], index=0)
-gemini_model_name = st.sidebar.selectbox("Gemini model", ["gemini-2.5-flash","gemini-2.5-pro"], index=0)
+openai_model        = st.sidebar.selectbox("OpenAI model", ["gpt-4","gpt-4o","gpt-3.5-turbo","gpt-3.5-turbo-16k"], index=0)
+gemini_model_name   = st.sidebar.selectbox("Gemini model", ["gemini-2.5-flash","gemini-2.5-pro"], index=0)
 perplexity_model_name = st.sidebar.selectbox("Perplexity model", ["sonar","sonar-pro"], index=0)
 
-openai_key = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
-gemini_key = st.secrets.get("gemini_api_key") or os.getenv("GEMINI_API_KEY")
-perp_key = st.secrets.get("perplexity_api_key") or os.getenv("PERPLEXITY_API_KEY")
+# ─── API CLIENTS ────────────────────────────────────────────────────────────────
+openai_key     = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
+gemini_key     = st.secrets.get("gemini_api_key") or os.getenv("GEMINI_API_KEY")
+perp_key       = st.secrets.get("perplexity_api_key") or os.getenv("PERPLEXITY_API_KEY")
 
 openai_client = OpenAI(api_key=openai_key)
 genai.configure(api_key=gemini_key)
@@ -115,6 +121,7 @@ def get_perplexity_response(q):
         st.error(f"Perplexity error: {e}")
         return "ERROR"
 
+# ─── TABS ──────────────────────────────────────────────────────────────────────
 tab1, tab2 = st.tabs(["Multi-LLM Response Generator","Search Visibility Analysis"])
 
 with tab1:
@@ -165,78 +172,59 @@ with tab2:
 
     if uploaded:
         df_main = pd.read_csv(uploaded)
+
         competitors = ["ROXBOX", "Wilmot", "Pac‑Van", "BMarko", "Giant", "XCaliber", "Conexwest", "Mobile Modular", "WillScot"]
-        pattern = re.compile(r'\\b(' + '|'.join(re.escape(c) for c in competitors) + r')\\b', flags=re.IGNORECASE)
+        pattern = re.compile(r'\b(' + '|'.join(re.escape(c) for c in competitors) + r')\b', flags=re.IGNORECASE)
 
         def extract_competitors(text):
             matches = pattern.findall(text or "")
-            found = [comp for m in matches for comp in competitors if m.lower() == comp.lower()]
+            found = []
+            for m in matches:
+                for comp in competitors:
+                    if m.lower() == comp.lower():
+                        found.append(comp)
             return ", ".join(sorted(set(found)))
 
         df_main["Competitors Mentioned"] = df_main["Response"].apply(extract_competitors)
         df_main['Branded Query'] = df_main['Query'].str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
         df_main['Falcon Mentioned'] = df_main['Response'].str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
-        df_main['Sources Cited'] = df_main['Response'].str.findall(r'(https?://\\S+)').apply(lambda lst: ', '.join(lst) if lst else '')
+        df_main['Sources Cited'] = df_main['Response'].str.findall(r'(https?://\S+)').apply(lambda lst: ', '.join(lst) if lst else '')
         df_main['Response Word-Count'] = df_main['Response'].astype(str).str.split().str.len()
         df_main['Query Number'] = pd.factorize(df_main['Query'])[0] + 1
         df_main = df_main[["Query Number", "Query", "Source", "Response", "Response Word-Count", "Branded Query", "Falcon Mentioned", "Competitors Mentioned", "Sources Cited"]]
 
         st.subheader("🧹 Cleaned Dataset")
-        st.caption("Below is the full cleaned dataset with Falcon mentions, competitors, citations, and other metrics.")
         st.dataframe(df_main, use_container_width=True, height=400)
+        st.download_button("Download Cleaned CSV", df_main.to_csv(index=False), "cleaned_responses.csv", "text/csv")
 
         st.subheader("📊 Mention Rates")
-        st.caption("Shows what percentage of responses mention Falcon by source.")
         overall_rate = df_main.groupby('Source')['Falcon Mentioned'].apply(lambda x: (x == 'Y').mean() * 100).round(1)
         cols = st.columns(len(overall_rate))
         for col, src in zip(cols, overall_rate.index):
             col.metric(f"{src} Mentions Falcon", f"{overall_rate[src]}%")
 
-        st.caption("Breakdown of Falcon mentions for branded vs. non-branded queries by source.")
         mention_rate = df_main.groupby(['Source', 'Branded Query'])['Falcon Mentioned'].apply(lambda x: (x == 'Y').mean() * 100).reset_index(name='Mention Rate (%)')
         pivot = mention_rate.pivot(index='Source', columns='Branded Query', values='Mention Rate (%)').rename(columns={'Y': 'Branded (%)', 'N': 'Non‑Branded (%)'}).round(1)
         st.dataframe(pivot.reset_index())
 
-        df_main['Falcon URL Cited'] = df_main['Response'].str.contains(r"https?://(?:www\\.)?falconstructures\\.com", case=False, regex=True, na=False)
+        # Falcon URL citation detection (corrected regex)
+        df_main['Falcon URL Cited'] = df_main['Response'].str.contains(r"https?://(?:www\.)?falconstructures\.com", case=False, regex=True, na=False)
 
+        # Citation rate chart
+        cit_rate = df_main.groupby("Source")["Falcon URL Cited"].mean().mul(100).round(1)
         st.subheader("🔗 Falcon URL Citation Rate")
-        st.caption("Shows how often each source included a link to Falcon’s website in their response.")
-        cit_rate = df_main.groupby("Source")['Falcon URL Cited'].mean().mul(100).round(1)
-        fig, ax = plt.subplots(figsize=(5, 3))
-        bars = ax.bar(cit_rate.index, cit_rate.values, color=sns.color_palette("Set2"))
-        for bar in bars:
-            yval = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval}%", ha='center', fontsize=9)
-        ax.set_ylabel("Citation Rate (%)")
-        ax.set_title("Falcon Website Citation by Source")
-        st.pyplot(fig)
+        st.bar_chart(cit_rate)
+
 
         df_main['sentiment_score'] = df_main['Response'].fillna('').apply(lambda t: ((sia.polarity_scores(t)['compound'] + 1) / 2) * 9 + 1)
-        sentiment_df = df_main.groupby("Source")['sentiment_score'].mean().round(1)
-
+        sentiment_df = df_main.groupby("Source")["sentiment_score"].mean().round(1)
         st.subheader("💬 Average Sentiment per LLM")
-        st.caption("Calculated sentiment score (1-10 scale) based on tone of responses mentioning Falcon.")
-        fig, ax = plt.subplots(figsize=(5, 3))
-        bars = ax.bar(sentiment_df.index, sentiment_df.values, color=sns.color_palette("Set3"))
-        for bar in bars:
-            yval = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2, yval + 0.1, f"{yval}", ha='center', fontsize=9)
-        ax.set_ylabel("Sentiment Score (1-10)")
-        ax.set_title("Average Sentiment by Source")
-        st.pyplot(fig)
+        st.bar_chart(sentiment_df)
 
         mask = (df_main['Falcon Mentioned'] == 'N') & df_main['Competitors Mentioned'].notna() & (df_main['Competitors Mentioned'].str.strip() != '')
-        gaps = df_main[mask][["Source", "Query", "Competitors Mentioned", "Response"]]
+        gaps = df_main[mask][["Source", "Query", "Competitors Mentioned"]]
         st.subheader("⚠️ Competitor-Only Gaps (No Falcon Mention)")
-        st.caption("Cases where one or more competitors are mentioned but Falcon is not.")
         st.dataframe(gaps.reset_index(drop=True), use_container_width=True)
-
-        st.subheader("📈 Response Word Count Distribution")
-        st.caption("Visualizes how long the responses are across sources.")
-        fig, ax = plt.subplots(figsize=(6, 3))
-        sns.boxplot(data=df_main, x="Source", y="Response Word-Count", ax=ax, palette="pastel")
-        ax.set_title("Distribution of Response Lengths by Source")
-        st.pyplot(fig)
 
     else:
         st.info("Please upload the raw CSV to begin analysis.")
