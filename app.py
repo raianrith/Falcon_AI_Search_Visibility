@@ -212,23 +212,28 @@ with tab2:
         st.subheader("🔗 Falcon URL Citation Rate")
         st.caption("Percentage of responses from each LLM that include a link to falconstructures.com.")
         
-        # Smaller, borderless chart
-        fig, ax = plt.subplots(figsize=(4.5, 2.8))
+        # ✅ Tighter layout + smaller fonts + shorter bars
+        fig, ax = plt.subplots(figsize=(3.8, 2.2), dpi=120)
+        
+        # Compact barplot
         sns.barplot(data=cit_rate, x="Source", y="Falcon URL Cited", palette="Set2", ax=ax)
         
-        # Remove top and right border lines (spines)
+        # Annotate each bar
+        for index, row in cit_rate.iterrows():
+            ax.text(index, row["Falcon URL Cited"] + 1, f"{row['Falcon URL Cited']:.1f}%", 
+                    ha='center', fontsize=8, fontweight='bold')
+        
+        # Clean look
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        
-        # Annotate values
-        for index, row in cit_rate.iterrows():
-            ax.text(index, row["Falcon URL Cited"] + 1, f"{row['Falcon URL Cited']:.1f}%", ha='center')
-        
-        ax.set_ylabel("Citation Rate (%)")
+        ax.set_ylabel("Citation Rate (%)", fontsize=9)
         ax.set_xlabel("")
-        fig.tight_layout()
+        ax.tick_params(axis='x', labelsize=9)
+        ax.tick_params(axis='y', labelsize=8)
         
+        fig.tight_layout()
         st.pyplot(fig)
+
 
         df_main['sentiment_score'] = df_main['Response'].fillna('').apply(lambda t: ((sia.polarity_scores(t)['compound'] + 1) / 2) * 9 + 1)
         sentiment_df = df_main.groupby("Source")["sentiment_score"].mean().round(1).reset_index()
