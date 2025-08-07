@@ -242,7 +242,8 @@ with tab2:
         with col6:
             st.metric("OpenAI", f"{mention_rate.get('OpenAI', 0)}%")
         
-
+        st.markdown("---")  # Divider
+        
         df_main['sentiment_score'] = df_main['Response'].fillna('').apply(lambda t: ((sia.polarity_scores(t)['compound'] + 1) / 2) * 9 + 1)
         sentiment_df = df_main.groupby("Source")["sentiment_score"].mean().round(1).reset_index()
         st.subheader("💬 Average Sentiment per LLM")
@@ -254,12 +255,16 @@ with tab2:
         ax2.set_ylabel("Avg Sentiment (1–10)")
         st.pyplot(fig2)
 
+        st.markdown("---")  # Divider
+        
         mask = (df_main['Falcon Mentioned'] == 'N') & df_main['Competitors Mentioned'].notna() & (df_main['Competitors Mentioned'].str.strip() != '')
         gaps = df_main[mask][["Source", "Query", "Response", "Competitors Mentioned"]]
         st.subheader("⚠️ Competitor-Only Gaps (No Falcon Mention)")
         st.caption("Cases where one or more competitors are mentioned but Falcon is not.")
         st.dataframe(gaps.reset_index(drop=True), use_container_width=True)
 
+        st.markdown("---")  # Divider
+        
         # ─── New Metric: Word Count Distribution ─────────────────────────────────
         st.subheader("📏 Response Length Distribution")
         st.caption("Histogram showing how long LLM responses are across sources.")
