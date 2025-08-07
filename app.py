@@ -197,35 +197,48 @@ with tab2:
         st.dataframe(df_main, use_container_width=True, height=400)
         st.download_button("Download Cleaned CSV", df_main.to_csv(index=False), "cleaned_responses.csv", "text/csv")
 
+        st.divider()
+        
         st.subheader("📊 Mention Rates")
         overall_rate = df_main.groupby('Source')['Falcon Mentioned'].apply(lambda x: (x == 'Y').mean() * 100).round(1)
         cols = st.columns(len(overall_rate))
         for col, src in zip(cols, overall_rate.index):
             col.metric(f"{src} Mentions Falcon", f"{overall_rate[src]}%")
 
+        st.caption("Breakdown of Falcon mentions for branded vs. non-branded queries by source.")
         mention_rate = df_main.groupby(['Source', 'Branded Query'])['Falcon Mentioned'].apply(lambda x: (x == 'Y').mean() * 100).reset_index(name='Mention Rate (%)')
         pivot = mention_rate.pivot(index='Source', columns='Branded Query', values='Mention Rate (%)').rename(columns={'Y': 'Branded (%)', 'N': 'Non‑Branded (%)'}).round(1)
         st.dataframe(pivot.reset_index())
-
+        
+        st.divider()
+        
         # Falcon URL citation detection (corrected regex)
         df_main['Falcon URL Cited'] = df_main['Response'].str.contains(r"https?://(?:www\.)?falconstructures\.com", case=False, regex=True, na=False)
-
+        
         # Citation rate chart
         cit_rate = df_main.groupby("Source")["Falcon URL Cited"].mean().mul(100).round(1)
         st.subheader("🔗 Falcon URL Citation Rate")
+        st.caption("Shows how often each source included a link to Falcon’s website in their response.")
         st.bar_chart(cit_rate)
 
-
+        st.divider()
+        
         df_main['sentiment_score'] = df_main['Response'].fillna('').apply(lambda t: ((sia.polarity_scores(t)['compound'] + 1) / 2) * 9 + 1)
         sentiment_df = df_main.groupby("Source")["sentiment_score"].mean().round(1)
         st.subheader("💬 Average Sentiment per LLM")
+        st.caption("Calculated sentiment score (1-10 scale) based on tone of responses mentioning Falcon.")
         st.bar_chart(sentiment_df)
 
+        st.divider()
+        
         mask = (df_main['Falcon Mentioned'] == 'N') & df_main['Competitors Mentioned'].notna() & (df_main['Competitors Mentioned'].str.strip() != '')
-        gaps = df_main[mask][["Source", "Query", "Competitors Mentioned"]]
+        gaps = df_main[mask][["Source", "Query", "Response", "Competitors Mentioned"]]
         st.subheader("⚠️ Competitor-Only Gaps (No Falcon Mention)")
+        st.caption("Cases where one or more competitors are mentioned but Falcon is not.")
         st.dataframe(gaps.reset_index(drop=True), use_container_width=True)
 
+        st.divider()
+        
         import seaborn as sns
         st.subheader("📈 Response Word Count Distribution")
         st.caption("Visualizes how long the responses are across sources.")
