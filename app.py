@@ -266,12 +266,7 @@ with tab2:
             full = pd.concat([overall, by_source], axis=1).fillna(0).reset_index().rename(columns={"index": "Brand"})
             return full.sort_values("Overall Share (%)", ascending=False)
         
-        # Branded
-        branded_df = compute_brand_share(df_main, query_type='Y')
-        st.dataframe(branded_df, use_container_width=True)
-        
-        # Spacer
-        st.markdown("---")
+
         
         st.subheader("🏷️ Brand Share — Non‑Branded Queries")
         st.caption("Of all responses to Non‑Branded queries (generic, no “Falcon”), what percentage of brand mentions go to each company?")
