@@ -288,61 +288,74 @@ with tab2:
         st.subheader("📄 Daily Summary by Source for Google Sheet")
         st.caption("Use this table to export summary metrics per source per run.")
 
-        from datetime import datetime
+         st.divider()
+
         
-        # Function to compute per-source metrics
-        def compute_metrics_by_source(df):
-            rows = []
-            today = datetime.today().date()
-            sources = df['Source'].unique().tolist()
+        import datetime
         
-            for src in sources:
-                src_df = df[df['Source'] == src]
-                branded_pct = (src_df['Branded Query'] == 'Y').mean() * 100
-                falcon_mention_pct = (src_df['Falcon Mentioned'] == 'Y').mean() * 100
-                avg_word_count = src_df['Response Word-Count'].mean()
-                avg_sentiment = src_df['sentiment_score'].mean()
-                citation_rate = src_df['Falcon URL Cited'].mean() * 100
-                comp_gap_count = ((src_df['Falcon Mentioned'] == 'N') & src_df['Competitors Mentioned'].notna() & (src_df['Competitors Mentioned'].str.strip() != '')).sum()
+        # Add current date
+        today = datetime.date.today()
         
-                rows.append({
-                    "Source": src,
-                    "Date": today,
-                    "Total Queries": src_df['Query'].nunique(),
-                    "Branded Query %": branded_pct,
-                    "Falcon Mention Rate (%)": falcon_mention_pct,
-                    "Avg Word Count": avg_word_count,
-                    "Avg Sentiment Score": avg_sentiment,
-                    "Falcon URL Citation Rate (%)": citation_rate,
-                    "Competitor-Only Gaps": comp_gap_count
-                })
+        # Step 1: Branded and Non-Branded flags
+        df_main['Branded Query'] = df_main['Query'].str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
+        df_main['Falcon Mentioned'] = df_main['Response'].str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
+        df_main['Falcon URL Cited'] = df_main['Response'].str.contains(r"https?://(?:www\.)?falconstructures\.com", case=False, na=False)
         
-            # Add total row
-            all_df = df.copy()
-            rows.append({
-                "Source": "Total",
-                "Date": today,
-                "Total Queries": all_df['Query'].nunique(),
-                "Branded Query %": (all_df['Branded Query'] == 'Y').mean() * 100,
-                "Falcon Mention Rate (%)": (all_df['Falcon Mentioned'] == 'Y').mean() * 100,
-                "Avg Word Count": all_df['Response Word-Count'].mean(),
-                "Avg Sentiment Score": all_df['sentiment_score'].mean(),
-                "Falcon URL Citation Rate (%)": all_df['Falcon URL Cited'].mean() * 100,
-                "Competitor-Only Gaps": ((all_df['Falcon Mentioned'] == 'N') & all_df['Competitors Mentioned'].notna() & (all_df['Competitors Mentioned'].str.strip() != '')).sum()
-            })
-        
-            return pd.DataFrame(rows).round(2)
-        
-        summary_by_source = compute_metrics_by_source(df_main)
-        st.dataframe(summary_by_source, use_container_width=True)
-        
-        st.download_button(
-            "📥 Download Summary Table",
-            summary_by_source.to_csv(index=False),
-            f"falcon_daily_source_summary_{datetime.today().strftime('%Y-%m-%d')}.csv",
-            "text/csv"
+        # Step 2: Mention Rate by Source & Query Type
+        mention_rates = (
+            df_main.groupby(["Source", "Branded Query"])["Falcon Mentioned"]
+            .apply(lambda x: (x == 'Y').mean() * 100)
+            .unstack()
+            .round(1)
+            .rename(columns={'Y': 'Branded Mention Rate (%)', 'N': 'Non-Branded Mention Rate (%)'})
         )
         
+        # Step 3: URL Citation Rate by Source & Query Type
+        citation_rates = (
+            df_main.groupby(["Source", "Branded Query"])["Falcon URL Cited"]
+            .mean()
+            .mul(100)
+            .unstack()
+            .round(1)
+            .rename(columns={True: 'Branded URL Citation Rate (%)', False: 'Non-Branded URL Citation Rate (%)'})
+        )
+        
+        # Step 4: Falcon Brand Share
+        def compute_brand_share(df, brand_filter):
+            mentions = []
+            for source in df['Source'].unique():
+                sub_df = df[(df['Source'] == source) & brand_filter]
+                total = len(sub_df)
+                falcon_mentions = sub_df['Response'].str.contains("falcon", case=False, na=False).sum()
+                share = (falcon_mentions / total) * 100 if total > 0 else 0
+                mentions.append((source, round(share, 1)))
+            return dict(mentions)
+        
+        branded_share = compute_brand_share(df_main, df_main["Branded Query"] == 'Y')
+        nonbranded_share = compute_brand_share(df_main, df_main["Branded Query"] == 'N')
+        
+        brand_share_df = pd.DataFrame({
+            "Falcon Brand Share (Branded)": pd.Series(branded_share),
+            "Falcon Brand Share (Non-Branded)": pd.Series(nonbranded_share)
+        })
+        
+        # Step 5: Merge all together
+        summary_df = mention_rates.join(citation_rates, how='outer').join(brand_share_df, how='outer')
+        summary_df["Date"] = today
+        summary_df.reset_index(inplace=True)
+        
+        # Show in app
+        st.subheader("📊 Daily Summary Metrics by Source")
+        st.dataframe(summary_df, use_container_width=True)
+        
+        # Optional: Save to CSV
+        st.download_button(
+            label="📥 Download Daily Summary CSV",
+            data=summary_df.to_csv(index=False),
+            file_name=f"Falcon_LLM_Summary_{today}.csv",
+            mime="text/csv"
+        )
+
 
     else:
         st.info("Please upload the raw CSV to begin analysis.")
