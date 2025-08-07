@@ -74,8 +74,92 @@ st.markdown("""
 # ─── TABS ──────────────────────────────────────────────────────────────────────
 tab1, tab2 = st.tabs(["Multi-LLM Response Generator","Search Visibility Analysis"])
 
-# Tab 1 remains unchanged
-# (...code for tab1 here...)
+with tab1:
+    st.markdown(
+        '<h5 style="text-align:center; margin-bottom:1rem; color:#a9a9a9">'
+        'Enter queries to generate responses from OpenAI (Chat GPT), Gemini, & Perplexity.'
+        '</h5>',
+        unsafe_allow_html=True
+    )
+    queries_input = st.text_area(
+        "Queries (one per line)",
+        height=200,
+        placeholder="e.g. What companies provide modular container offices in the US?"
+    )
+    left, center, right = st.columns([1, 2, 1])
+    with center:
+        run = st.button("Run Analysis", key="run")
+
+    openai_model        = st.sidebar.selectbox("OpenAI model", ["gpt-4","gpt-4o","gpt-3.5-turbo","gpt-3.5-turbo-16k"], index=0)
+    gemini_model_name   = st.sidebar.selectbox("Gemini model", ["gemini-2.5-flash","gemini-2.5-pro"], index=0)
+    perplexity_model_name = st.sidebar.selectbox("Perplexity model", ["sonar","sonar-pro"], index=0)
+
+    openai_key     = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
+    gemini_key     = st.secrets.get("gemini_api_key") or os.getenv("GEMINI_API_KEY")
+    perp_key       = st.secrets.get("perplexity_api_key") or os.getenv("PERPLEXITY_API_KEY")
+
+    openai_client = OpenAI(api_key=openai_key)
+    genai.configure(api_key=gemini_key)
+    gemini_model = genai.GenerativeModel(gemini_model_name)
+    perplexity_client = OpenAI(api_key=perp_key, base_url="https://api.perplexity.ai")
+
+    SYSTEM_PROMPT = "Provide a helpful answer to the user’s query."
+
+    def get_openai_response(q):
+        try:
+            r = openai_client.chat.completions.create(
+                model=openai_model,
+                messages=[{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":q}]
+            )
+            return r.choices[0].message.content.strip()
+        except Exception as e:
+            st.error(f"OpenAI error: {e}")
+            return "ERROR"
+
+    def get_gemini_response(q):
+        try:
+            r = gemini_model.generate_content(q)
+            return r.candidates[0].content.parts[0].text.strip()
+        except Exception as e:
+            st.error(f"Gemini error: {e}")
+            return "ERROR"
+
+    def get_perplexity_response(q):
+        try:
+            r = perplexity_client.chat.completions.create(
+                model=perplexity_model_name,
+                messages=[{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":q}]
+            )
+            return r.choices[0].message.content.strip()
+        except Exception as e:
+            st.error(f"Perplexity error: {e}")
+            return "ERROR"
+
+    if run:
+        qs = [q.strip() for q in queries_input.splitlines() if q.strip()]
+        if not qs:
+            st.warning("Please enter at least one query.")
+        else:
+            results = []
+            with st.spinner("Gathering responses…"):
+                for q in qs:
+                    for source, fn in [
+                        ("OpenAI", get_openai_response),
+                        ("Gemini", get_gemini_response),
+                        ("Perplexity", get_perplexity_response)
+                    ]:
+                        txt = fn(q)
+                        results.append({"Query": q, "Source": source, "Response": txt})
+                        time.sleep(1)
+
+            df = pd.DataFrame(results)[["Query","Source","Response"]]
+            st.dataframe(df, use_container_width=True)
+            st.download_button(
+                "Download CSV",
+                df.to_csv(index=False),
+                "responses.csv",
+                "text/csv"
+            )
 
 with tab2:
     st.markdown("### Search Visibility Analysis")
@@ -126,7 +210,7 @@ with tab2:
         cit_rate = df_main.groupby("Source")["Falcon URL Cited"].mean().mul(100).round(1).reset_index()
         st.subheader("🔗 Falcon URL Citation Rate")
         st.caption("Percentage of responses from each LLM that include a link to falconstructures.com.")
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(5, 3.5))
         sns.barplot(data=cit_rate, x="Source", y="Falcon URL Cited", palette="Set2", ax=ax)
         for index, row in cit_rate.iterrows():
             ax.text(index, row["Falcon URL Cited"] + 1, f"{row['Falcon URL Cited']:.1f}%", ha='center')
@@ -137,7 +221,7 @@ with tab2:
         sentiment_df = df_main.groupby("Source")["sentiment_score"].mean().round(1).reset_index()
         st.subheader("💬 Average Sentiment per LLM")
         st.caption("Average sentiment score of responses from each LLM (1 = negative, 10 = positive).")
-        fig2, ax2 = plt.subplots()
+        fig2, ax2 = plt.subplots(figsize=(5, 3.5))
         sns.barplot(data=sentiment_df, x="Source", y="sentiment_score", palette="Set1", ax=ax2)
         for index, row in sentiment_df.iterrows():
             ax2.text(index, row["sentiment_score"] + 0.1, f"{row['sentiment_score']:.1f}", ha='center')
@@ -153,7 +237,7 @@ with tab2:
         # ─── New Metric: Word Count Distribution ─────────────────────────────────
         st.subheader("📏 Response Length Distribution")
         st.caption("Histogram showing how long LLM responses are across sources.")
-        fig3, ax3 = plt.subplots()
+        fig3, ax3 = plt.subplots(figsize=(6, 3.5))
         sns.histplot(data=df_main, x="Response Word-Count", hue="Source", multiple="stack", palette="pastel", bins=20, ax=ax3)
         ax3.set_xlabel("Word Count")
         ax3.set_ylabel("Number of Responses")
