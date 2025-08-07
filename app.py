@@ -212,7 +212,7 @@ with tab2:
         st.caption("Percentage of responses from each LLM that include a link to falconstructures.com.")
         
         # Smaller figure size
-        fig, ax = plt.subplots(figsize=(2, 1), dpi=100)
+        fig, ax = plt.subplots(figsize=(2, 1), dpi=200)
         
         # Barplot
         sns.barplot(data=cit_rate, x="Source", y="Falcon URL Cited", palette="Set2", ax=ax)
