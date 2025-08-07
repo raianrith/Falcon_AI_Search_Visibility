@@ -238,6 +238,50 @@ with tab2:
         st.dataframe(gaps.reset_index(drop=True), use_container_width=True)
 
         st.divider()
+
+        st.subheader("🏷️ Brand Share — Branded Queries")
+        st.caption("Of all responses to Branded queries (those containing “Falcon”), what percentage of brand mentions go to each company?")
+        
+        def compute_brand_share(df, query_type='Y'):
+            df_subset = df[df['Branded Query'] == query_type].copy()
+        
+            brand_mentions = []
+        
+            for idx, row in df_subset.iterrows():
+                brands = []
+                if row['Falcon Mentioned'] == 'Y':
+                    brands.append("Falcon Structures")
+                competitors = row['Competitors Mentioned']
+                if pd.notna(competitors) and competitors.strip():
+                    brands += [x.strip() for x in competitors.split(",")]
+        
+                for brand in brands:
+                    brand_mentions.append({"Brand": brand, "Source": row["Source"]})
+        
+            mention_df = pd.DataFrame(brand_mentions)
+            overall = mention_df["Brand"].value_counts(normalize=True).mul(100).round(1).rename("Overall Share (%)")
+            by_source = mention_df.groupby(["Brand", "Source"]).size().unstack(fill_value=0)
+            by_source = by_source.div(by_source.sum(axis=0), axis=1).mul(100).round(1)
+            
+            full = pd.concat([overall, by_source], axis=1).fillna(0).reset_index().rename(columns={"index": "Brand"})
+            return full.sort_values("Overall Share (%)", ascending=False)
+        
+        # Branded
+        branded_df = compute_brand_share(df_main, query_type='Y')
+        st.dataframe(branded_df, use_container_width=True)
+        
+        # Spacer
+        st.markdown("---")
+        
+        st.subheader("🏷️ Brand Share — Non‑Branded Queries")
+        st.caption("Of all responses to Non‑Branded queries (generic, no “Falcon”), what percentage of brand mentions go to each company?")
+        
+        # Non-Branded
+        nonbranded_df = compute_brand_share(df_main, query_type='N')
+        st.dataframe(nonbranded_df, use_container_width=True)
+
+        
+        st.divider()
         
         import seaborn as sns
         st.subheader("📈 Response Word Count Distribution")
