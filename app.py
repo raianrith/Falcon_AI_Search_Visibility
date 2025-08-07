@@ -212,7 +212,7 @@ with tab2:
         st.caption("Percentage of responses from each LLM that include a link to falconstructures.com.")
         
         # Smaller figure size
-        fig, ax = plt.subplots(figsize=(3, 1.8), dpi=100)
+        fig, ax = plt.subplots(figsize=(2, 1.5), dpi=50)
         
         # Barplot
         sns.barplot(data=cit_rate, x="Source", y="Falcon URL Cited", palette="Set2", ax=ax)
@@ -225,10 +225,10 @@ with tab2:
         # Axis formatting
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.set_ylabel("Citation Rate (%)", fontsize=8, fontweight='normal')
+        ax.set_ylabel("Citation Rate (%)", fontsize=4, fontweight='normal')
         ax.set_xlabel("")
-        ax.tick_params(axis='x', labelsize=8)
-        ax.tick_params(axis='y', labelsize=7)
+        ax.tick_params(axis='x', labelsize=5)
+        ax.tick_params(axis='y', labelsize=5)
         
         fig.tight_layout()
         st.pyplot(fig)
