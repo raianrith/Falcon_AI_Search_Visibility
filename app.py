@@ -207,6 +207,8 @@ with tab2:
         st.dataframe(pivot.reset_index())
 
         # Falcon URL Citation Rate
+        import matplotlib.pyplot as plt
+
         df_main['Falcon URL Cited'] = df_main['Response'].str.contains(
             r"https?://(?:www\.)?falconstructures\.com", 
             case=False, regex=True, na=False
@@ -215,31 +217,34 @@ with tab2:
         cit_rate = (
             df_main.groupby("Source")["Falcon URL Cited"]
             .mean().mul(100).round(1).reset_index()
-        )
+        ).sort_values("Falcon URL Cited", ascending=True)
         
         st.subheader("🔗 Falcon URL Citation Rate")
         st.caption("Percentage of responses from each LLM that include a link to falconstructures.com.")
         
-        # 📏 Small chart with sharp resolution
-        fig, ax = plt.subplots(figsize=(2, 1), dpi=300)
+        # 🌱 Lollipop chart
+        fig, ax = plt.subplots(figsize=(2.5, 1.5), dpi=300)
         
-        # 🎨 Barplot
-        sns.barplot(data=cit_rate, x="Source", y="Falcon URL Cited", palette="Set2", ax=ax)
+        # Stem lines
+        ax.hlines(y=cit_rate["Source"], xmin=0, xmax=cit_rate["Falcon URL Cited"], color='gray', linewidth=0.5)
         
-        # 📍 Add smaller, non-bold value labels
-        for index, row in cit_rate.iterrows():
-            ax.text(index, row["Falcon URL Cited"] + 1, f"{row['Falcon URL Cited']:.1f}%", 
-                    ha='center', fontsize=6, fontweight='normal', color='black')
+        # Dots
+        ax.plot(cit_rate["Falcon URL Cited"], cit_rate["Source"], 'o', color='seagreen')
         
-        # 🎯 Minimal, aesthetic styling
-        ax.set_ylabel("Citation Rate (%)", fontsize=6, fontweight='normal')
-        ax.set_xlabel("")
-        ax.tick_params(axis='x', labelsize=6)
-        ax.tick_params(axis='y', labelsize=6)
+        # Annotations
+        for i, (val, label) in enumerate(zip(cit_rate["Falcon URL Cited"], cit_rate["Source"])):
+            ax.text(val + 1, label, f"{val:.1f}%", va='center', fontsize=5)
         
-        # 🧼 Remove top/right and thin out spines
-        for spine in ['top', 'right', 'left', 'bottom']:
-            ax.spines[spine].set_linewidth(0.4)
+        # Clean style
+        ax.set_xlim(0, max(cit_rate["Falcon URL Cited"]) + 10)
+        ax.set_xlabel("Citation Rate (%)", fontsize=6)
+        ax.set_ylabel("")
+        ax.tick_params(axis='x', labelsize=5)
+        ax.tick_params(axis='y', labelsize=5)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['bottom'].set_linewidth(0.4)
         
         fig.tight_layout()
         st.pyplot(fig)
