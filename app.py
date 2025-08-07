@@ -207,6 +207,7 @@ with tab2:
         st.dataframe(pivot.reset_index())
 
         # Falcon URL Citation Rate
+       
         import matplotlib.pyplot as plt
 
         df_main['Falcon URL Cited'] = df_main['Response'].str.contains(
@@ -222,33 +223,32 @@ with tab2:
         st.subheader("🔗 Falcon URL Citation Rate")
         st.caption("Percentage of responses from each LLM that include a link to falconstructures.com.")
         
-        # 🌱 Lollipop chart
+        # ✨ Clean lollipop chart
         fig, ax = plt.subplots(figsize=(2.5, 1.5), dpi=300)
         
-        # Stem lines
-        ax.hlines(y=cit_rate["Source"], xmin=0, xmax=cit_rate["Falcon URL Cited"], color='gray', linewidth=0.5)
+        # Lollipop stem lines
+        ax.hlines(y=cit_rate["Source"], xmin=0, xmax=cit_rate["Falcon URL Cited"], color="gray", linewidth=0.6)
         
-        # Dots
-        ax.plot(cit_rate["Falcon URL Cited"], cit_rate["Source"], 'o', color='seagreen')
+        # Smaller dots
+        ax.plot(cit_rate["Falcon URL Cited"], cit_rate["Source"], 'o', color="#2a9d8f", markersize=3)
         
-        # Annotations
+        # Value annotations
         for i, (val, label) in enumerate(zip(cit_rate["Falcon URL Cited"], cit_rate["Source"])):
             ax.text(val + 1, label, f"{val:.1f}%", va='center', fontsize=5)
         
-        # Clean style
+        # Styling
         ax.set_xlim(0, max(cit_rate["Falcon URL Cited"]) + 10)
         ax.set_xlabel("Citation Rate (%)", fontsize=6)
         ax.set_ylabel("")
         ax.tick_params(axis='x', labelsize=5)
         ax.tick_params(axis='y', labelsize=5)
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_visible(False)
-        ax.spines['bottom'].set_linewidth(0.4)
+        
+        # Remove heavy borders
+        for spine in ax.spines.values():
+            spine.set_visible(False)
         
         fig.tight_layout()
         st.pyplot(fig)
-
 
 
 
