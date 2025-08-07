@@ -366,55 +366,98 @@ with tab3:
     st.markdown("### 📈 Time Series Analysis")
     st.caption("Track changes in key search visibility metrics over time.")
 
-    df_main['Date'] = pd.to_datetime(df_main['Date'])
+    # Upload service account key
+    json_key = st.file_uploader("Upload your Google Sheets service account key (.json)", type="json")
 
-    # Falcon Mention Rate by Source & Branded
-    mention_rates_ts = (
-        df_main.groupby(["Date", "Source", "Branded Query"])["Falcon Mentioned"]
-        .apply(lambda x: (x == 'Y').mean() * 100)
-        .reset_index(name="Falcon Mention Rate")
-    )
+    if json_key is not None:
+        import gspread
+        import tempfile
+        import pandas as pd
+        from oauth2client.service_account import ServiceAccountCredentials
+        from gspread_dataframe import get_as_dataframe
+        from nltk.sentiment import SentimentIntensityAnalyzer
+        import nltk
+        nltk.download('vader_lexicon', quiet=True)
 
-    # Falcon Brand Share by Source
-    brand_share_ts = df_main.groupby(["Date", "Source"]).apply(
-        lambda g: (g["Falcon Mentioned"] == "Y").sum() / len(g) * 100
-    ).reset_index(name="Falcon Brand Share")
+        # Save uploaded key to a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp_file:
+            tmp_file.write(json_key.read())
+            tmp_file_path = tmp_file.name
 
-    # Falcon URL Citation Rate
-    df_main["Falcon URL Cited"] = df_main["Sources Cited"].str.contains("falconstructures.com", na=False, case=False)
-    citation_rate_ts = (
-        df_main.groupby(["Date", "Source"])["Falcon URL Cited"]
-        .mean()
-        .mul(100)
-        .reset_index(name="Citation Rate")
-    )
+        # Authenticate
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        creds = ServiceAccountCredentials.from_json_keyfile_name(tmp_file_path, scope)
+        client = gspread.authorize(creds)
 
-    # Response Word Count
-    word_count_ts = df_main.groupby(["Date", "Source"])["Response Word-Count"].mean().reset_index(name="Avg Word Count")
+        # Open the Google Sheet and read data
+        sheet = client.open("CLEANED RESPONSES").sheet1
+        df_main = get_as_dataframe(sheet).dropna(how='all')
+        df_main = df_main.dropna(axis=1, how='all')  # drop empty columns too
 
-    # Sentiment Score
-    df_main['sentiment_score'] = df_main['Response'].fillna('').apply(lambda t: ((sia.polarity_scores(t)['compound'] + 1) / 2) * 9 + 1)
-    sentiment_ts = df_main.groupby(["Date", "Source"])["sentiment_score"].mean().reset_index(name="Avg Sentiment")
+        # Ensure Date column is datetime
+        df_main['Date'] = pd.to_datetime(df_main['Date'])
 
-    st.subheader("Falcon Mention Rate (Branded & Non-Branded)")
-    for bq in ['Y', 'N']:
-        subset = mention_rates_ts[mention_rates_ts["Branded Query"] == bq].pivot(index="Date", columns="Source", values="Falcon Mention Rate")
-        st.line_chart(subset, height=250, use_container_width=True)
+        # Setup Sentiment Analyzer
+        sia = SentimentIntensityAnalyzer()
 
-    st.subheader("Falcon Brand Share Over Time")
-    share_pivot = brand_share_ts.pivot(index="Date", columns="Source", values="Falcon Brand Share")
-    st.line_chart(share_pivot, height=250, use_container_width=True)
+        # Falcon Mention Rate by Source & Branded
+        mention_rates_ts = (
+            df_main.groupby(["Date", "Source", "Branded Query"])["Falcon Mentioned"]
+            .apply(lambda x: (x == 'Y').mean() * 100)
+            .reset_index(name="Falcon Mention Rate")
+        )
 
-    st.subheader("Falcon URL Citation Rate Over Time")
-    cite_pivot = citation_rate_ts.pivot(index="Date", columns="Source", values="Citation Rate")
-    st.line_chart(cite_pivot, height=250, use_container_width=True)
+        # Falcon Brand Share by Source (simplified to Falcon mention % across all responses)
+        brand_share_ts = df_main.groupby(["Date", "Source"]).apply(
+            lambda g: (g["Falcon Mentioned"] == "Y").sum() / len(g) * 100
+        ).reset_index(name="Falcon Brand Share")
 
-    st.subheader("Average Response Word Count")
-    wc_pivot = word_count_ts.pivot(index="Date", columns="Source", values="Avg Word Count")
-    st.line_chart(wc_pivot, height=250, use_container_width=True)
+        # Falcon URL Citation Rate
+        df_main["Falcon URL Cited"] = df_main["Sources Cited"].str.contains("falconstructures.com", na=False, case=False)
+        citation_rate_ts = (
+            df_main.groupby(["Date", "Source"])["Falcon URL Cited"]
+            .mean()
+            .mul(100)
+            .reset_index(name="Citation Rate")
+        )
 
-    st.subheader("Average Sentiment Score (1‑10 Scale)")
-    sent_pivot = sentiment_ts.pivot(index="Date", columns="Source", values="Avg Sentiment")
-    st.line_chart(sent_pivot, height=250, use_container_width=True)
+        # Response Word Count
+        df_main['Response Word-Count'] = df_main['Response'].astype(str).str.split().str.len()
+        word_count_ts = df_main.groupby(["Date", "Source"])["Response Word-Count"].mean().reset_index(name="Avg Word Count")
+
+        # Sentiment Score (rescaled to 1-10)
+        df_main['sentiment_score'] = df_main['Response'].fillna('').apply(
+            lambda t: ((sia.polarity_scores(t)['compound'] + 1) / 2) * 9 + 1
+        )
+        sentiment_ts = df_main.groupby(["Date", "Source"])["sentiment_score"].mean().reset_index(name="Avg Sentiment")
+
+        ### PLOTS
+
+        st.subheader("Falcon Mention Rate (Branded & Non-Branded)")
+        for bq in ['Y', 'N']:
+            label = "Branded Queries" if bq == 'Y' else "Non-Branded Queries"
+            st.markdown(f"**{label}**")
+            subset = mention_rates_ts[mention_rates_ts["Branded Query"] == bq].pivot(index="Date", columns="Source", values="Falcon Mention Rate")
+            st.line_chart(subset, height=250, use_container_width=True)
+
+        st.subheader("Falcon Brand Share Over Time")
+        share_pivot = brand_share_ts.pivot(index="Date", columns="Source", values="Falcon Brand Share")
+        st.line_chart(share_pivot, height=250, use_container_width=True)
+
+        st.subheader("Falcon URL Citation Rate Over Time")
+        cite_pivot = citation_rate_ts.pivot(index="Date", columns="Source", values="Citation Rate")
+        st.line_chart(cite_pivot, height=250, use_container_width=True)
+
+        st.subheader("Average Response Word Count")
+        wc_pivot = word_count_ts.pivot(index="Date", columns="Source", values="Avg Word Count")
+        st.line_chart(wc_pivot, height=250, use_container_width=True)
+
+        st.subheader("Average Sentiment Score (1‑10 Scale)")
+        sent_pivot = sentiment_ts.pivot(index="Date", columns="Source", values="Avg Sentiment")
+        st.line_chart(sent_pivot, height=250, use_container_width=True)
+
+    else:
+        st.warning("⬆️ Please upload your service account `.json` file to begin.")
+
 
 
