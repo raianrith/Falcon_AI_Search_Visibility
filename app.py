@@ -291,8 +291,6 @@ with tab2:
 
         st.divider()
 
-else:
-    st.info("Please upload the raw CSV to begin analysis.")
         
         import datetime
         
@@ -358,7 +356,9 @@ else:
             file_name=f"Falcon_LLM_Summary_{today}.csv",
             mime="text/csv"
         )
-
+    
+    else:
+        st.info("Please upload the raw CSV to begin analysis.")
 # ─── TAB: TIME SERIES ANALYSIS ──────────────────────────────────────────────
 
 
