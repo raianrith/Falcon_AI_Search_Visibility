@@ -285,5 +285,64 @@ with tab2:
         ax.set_title("Distribution of Response Lengths by Source")
         st.pyplot(fig)
 
+        st.subheader("📄 Daily Summary by Source for Google Sheet")
+        st.caption("Use this table to export summary metrics per source per run.")
+
+        from datetime import datetime
+        
+        # Function to compute per-source metrics
+        def compute_metrics_by_source(df):
+            rows = []
+            today = datetime.today().date()
+            sources = df['Source'].unique().tolist()
+        
+            for src in sources:
+                src_df = df[df['Source'] == src]
+                branded_pct = (src_df['Branded Query'] == 'Y').mean() * 100
+                falcon_mention_pct = (src_df['Falcon Mentioned'] == 'Y').mean() * 100
+                avg_word_count = src_df['Response Word-Count'].mean()
+                avg_sentiment = src_df['sentiment_score'].mean()
+                citation_rate = src_df['Falcon URL Cited'].mean() * 100
+                comp_gap_count = ((src_df['Falcon Mentioned'] == 'N') & src_df['Competitors Mentioned'].notna() & (src_df['Competitors Mentioned'].str.strip() != '')).sum()
+        
+                rows.append({
+                    "Source": src,
+                    "Date": today,
+                    "Total Queries": src_df['Query'].nunique(),
+                    "Branded Query %": branded_pct,
+                    "Falcon Mention Rate (%)": falcon_mention_pct,
+                    "Avg Word Count": avg_word_count,
+                    "Avg Sentiment Score": avg_sentiment,
+                    "Falcon URL Citation Rate (%)": citation_rate,
+                    "Competitor-Only Gaps": comp_gap_count
+                })
+        
+            # Add total row
+            all_df = df.copy()
+            rows.append({
+                "Source": "Total",
+                "Date": today,
+                "Total Queries": all_df['Query'].nunique(),
+                "Branded Query %": (all_df['Branded Query'] == 'Y').mean() * 100,
+                "Falcon Mention Rate (%)": (all_df['Falcon Mentioned'] == 'Y').mean() * 100,
+                "Avg Word Count": all_df['Response Word-Count'].mean(),
+                "Avg Sentiment Score": all_df['sentiment_score'].mean(),
+                "Falcon URL Citation Rate (%)": all_df['Falcon URL Cited'].mean() * 100,
+                "Competitor-Only Gaps": ((all_df['Falcon Mentioned'] == 'N') & all_df['Competitors Mentioned'].notna() & (all_df['Competitors Mentioned'].str.strip() != '')).sum()
+            })
+        
+            return pd.DataFrame(rows).round(2)
+        
+        summary_by_source = compute_metrics_by_source(df_main)
+        st.dataframe(summary_by_source, use_container_width=True)
+        
+        st.download_button(
+            "📥 Download Summary Table",
+            summary_by_source.to_csv(index=False),
+            f"falcon_daily_source_summary_{datetime.today().strftime('%Y-%m-%d')}.csv",
+            "text/csv"
+        )
+        
+
     else:
         st.info("Please upload the raw CSV to begin analysis.")
