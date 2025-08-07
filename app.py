@@ -288,7 +288,7 @@ with tab2:
         st.subheader("📄 Daily Summary by Source for Google Sheet")
         st.caption("Use this table to export summary metrics per source per run.")
 
-         st.divider()
+        st.divider()
 
         
         import datetime
