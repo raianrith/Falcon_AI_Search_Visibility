@@ -193,6 +193,56 @@ with tab2:
         st.dataframe(df_main, use_container_width=True, height=400)
         st.download_button("Download Cleaned CSV", df_main.to_csv(index=False), "cleaned_responses.csv", "text/csv")
 
+        # TEST
+            st.header("📊 Falcon Mentions Summary")
+    
+        # --- Falcon URL Citation Rate ---
+        df_main['Falcon URL Cited'] = df_main['Response'].str.contains(
+            r"https?://(?:www\.)?falconstructures\.com", 
+            case=False, regex=True, na=False
+        )
+    
+        cit_rate = (
+            df_main.groupby("Source")["Falcon URL Cited"]
+            .mean().mul(100).round(1)
+            .to_dict()
+        )
+    
+        # --- Falcon Mentions in Text (not necessarily a URL) ---
+        df_main['Falcon Mentioned'] = df_main['Response'].str.contains(
+            r"falcon\s?structures", case=False, na=False
+        )
+    
+        mention_rate = (
+            df_main.groupby("Source")["Falcon Mentioned"]
+            .mean().mul(100).round(1)
+            .to_dict()
+        )
+    
+        # --- Display KPI-style metrics ---
+        st.subheader("🔗 Falcon URL Citation Rate")
+        st.caption("Percentage of responses from each LLM that include a link to falconstructures.com.")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Gemini", f"{cit_rate.get('Gemini', 0)}%")
+        with col2:
+            st.metric("Perplexity", f"{cit_rate.get('Perplexity', 0)}%")
+        with col3:
+            st.metric("OpenAI", f"{cit_rate.get('OpenAI', 0)}%")
+    
+        st.markdown("---")  # Divider
+    
+        st.subheader("📣 Falcon Mention Rate")
+        st.caption("Percentage of responses from each LLM that mention Falcon Structures (regardless of link).")
+        col4, col5, col6 = st.columns(3)
+        with col4:
+            st.metric("Gemini", f"{mention_rate.get('Gemini', 0)}%")
+        with col5:
+            st.metric("Perplexity", f"{mention_rate.get('Perplexity', 0)}%")
+        with col6:
+            st.metric("OpenAI", f"{mention_rate.get('OpenAI', 0)}%")
+        # TEST COMPLETE
+        
         st.subheader("📊 Mention Rates")
         st.caption("Percentage of responses from each LLM that mention Falcon at least once.")
         overall_rate = df_main.groupby('Source')['Falcon Mentioned'].apply(lambda x: (x == 'Y').mean() * 100).round(1)
