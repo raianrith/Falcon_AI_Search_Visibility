@@ -194,7 +194,7 @@ with tab2:
         st.download_button("Download Cleaned CSV", df_main.to_csv(index=False), "cleaned_responses.csv", "text/csv")
 
         # TEST
-            st.header("📊 Falcon Mentions Summary")
+        st.header("📊 Falcon Mentions Summary")
     
         # --- Falcon URL Citation Rate ---
         df_main['Falcon URL Cited'] = df_main['Response'].str.contains(
