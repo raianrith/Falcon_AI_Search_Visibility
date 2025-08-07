@@ -206,33 +206,33 @@ with tab2:
         st.caption("Breakdown of Falcon mention rate in branded vs non-branded queries across LLMs.")
         st.dataframe(pivot.reset_index())
 
-        df_main['Falcon URL Cited'] = df_main['Response'].str.contains(r"https?://(?:www\.)?falconstructures\.com", case=False, regex=True, na=False)
+        df_main['Falcon URL Cited'] = df_main['Response'].str.contains(r"https?://(?:www\.)?falconstructures\.com", case=False, regex=True, na=False )
         cit_rate = df_main.groupby("Source")["Falcon URL Cited"].mean().mul(100).round(1).reset_index()
-        
         st.subheader("🔗 Falcon URL Citation Rate")
         st.caption("Percentage of responses from each LLM that include a link to falconstructures.com.")
         
-        # ✅ Tighter layout + smaller fonts + shorter bars
-        fig, ax = plt.subplots(figsize=(3.8, 2.2), dpi=120)
+        # Smaller figure size
+        fig, ax = plt.subplots(figsize=(3, 1.8), dpi=100)
         
-        # Compact barplot
+        # Barplot
         sns.barplot(data=cit_rate, x="Source", y="Falcon URL Cited", palette="Set2", ax=ax)
         
-        # Annotate each bar
+        # Annotations (smaller + not bold)
         for index, row in cit_rate.iterrows():
             ax.text(index, row["Falcon URL Cited"] + 1, f"{row['Falcon URL Cited']:.1f}%", 
-                    ha='center', fontsize=8, fontweight='bold')
+                    ha='center', fontsize=7, fontweight='normal')
         
-        # Clean look
+        # Axis formatting
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.set_ylabel("Citation Rate (%)", fontsize=9)
+        ax.set_ylabel("Citation Rate (%)", fontsize=8, fontweight='normal')
         ax.set_xlabel("")
-        ax.tick_params(axis='x', labelsize=9)
-        ax.tick_params(axis='y', labelsize=8)
+        ax.tick_params(axis='x', labelsize=8)
+        ax.tick_params(axis='y', labelsize=7)
         
         fig.tight_layout()
         st.pyplot(fig)
+
 
 
         df_main['sentiment_score'] = df_main['Response'].fillna('').apply(lambda t: ((sia.polarity_scores(t)['compound'] + 1) / 2) * 9 + 1)
