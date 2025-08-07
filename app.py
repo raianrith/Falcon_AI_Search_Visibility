@@ -207,9 +207,10 @@ with tab2:
         st.dataframe(pivot.reset_index())
 
         # Falcon URL Citation Rate
-       
         import matplotlib.pyplot as plt
-
+        import seaborn as sns
+        
+        # Compute citation rate
         df_main['Falcon URL Cited'] = df_main['Response'].str.contains(
             r"https?://(?:www\.)?falconstructures\.com", 
             case=False, regex=True, na=False
@@ -220,30 +221,31 @@ with tab2:
             .mean().mul(100).round(1).reset_index()
         ).sort_values("Falcon URL Cited", ascending=True)
         
+        # Streamlit chart section
         st.subheader("🔗 Falcon URL Citation Rate")
         st.caption("Percentage of responses from each LLM that include a link to falconstructures.com.")
         
-        # ✨ Clean lollipop chart
-        fig, ax = plt.subplots(figsize=(2.5, 1.5), dpi=300)
+        # Better balance for sharpness and clarity
+        fig, ax = plt.subplots(figsize=(5, 3.5))  # Bigger size, no DPI needed
         
         # Lollipop stem lines
-        ax.hlines(y=cit_rate["Source"], xmin=0, xmax=cit_rate["Falcon URL Cited"], color="gray", linewidth=0.6)
+        ax.hlines(y=cit_rate["Source"], xmin=0, xmax=cit_rate["Falcon URL Cited"], color="gray", linewidth=1)
         
-        # Smaller dots
-        ax.plot(cit_rate["Falcon URL Cited"], cit_rate["Source"], 'o', color="#2a9d8f", markersize=3)
+        # Lollipop dots
+        ax.plot(cit_rate["Falcon URL Cited"], cit_rate["Source"], 'o', color="#2a9d8f", markersize=8)
         
-        # Value annotations
+        # Add text annotations
         for i, (val, label) in enumerate(zip(cit_rate["Falcon URL Cited"], cit_rate["Source"])):
-            ax.text(val + 1, label, f"{val:.1f}%", va='center', fontsize=5)
+            ax.text(val + 1, label, f"{val:.1f}%", va='center', fontsize=10)
         
         # Styling
         ax.set_xlim(0, max(cit_rate["Falcon URL Cited"]) + 10)
-        ax.set_xlabel("Citation Rate (%)", fontsize=6)
+        ax.set_xlabel("Citation Rate (%)", fontsize=10)
         ax.set_ylabel("")
-        ax.tick_params(axis='x', labelsize=5)
-        ax.tick_params(axis='y', labelsize=5)
+        ax.tick_params(axis='x', labelsize=9)
+        ax.tick_params(axis='y', labelsize=9)
         
-        # Remove heavy borders
+        # Clean up borders
         for spine in ax.spines.values():
             spine.set_visible(False)
         
