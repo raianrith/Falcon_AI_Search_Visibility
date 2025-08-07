@@ -207,10 +207,14 @@ with tab2:
         pivot = mention_rate.pivot(index='Source', columns='Branded Query', values='Mention Rate (%)').rename(columns={'Y': 'Branded (%)', 'N': 'Non‑Branded (%)'}).round(1)
         st.dataframe(pivot.reset_index())
 
-        df_main['Falcon URL Cited'] = df_main['Response'].str.contains(r"https?://(?:www\\.)?falconstructures\\.com", case=False, regex=True, na=False)
+        # Falcon URL citation detection (corrected regex)
+        df_main['Falcon URL Cited'] = df_main['Response'].str.contains(r"https?://(?:www\.)?falconstructures\.com", case=False, regex=True, na=False)
+
+        # Citation rate chart
         cit_rate = df_main.groupby("Source")["Falcon URL Cited"].mean().mul(100).round(1)
         st.subheader("🔗 Falcon URL Citation Rate")
         st.bar_chart(cit_rate)
+
 
         df_main['sentiment_score'] = df_main['Response'].fillna('').apply(lambda t: ((sia.polarity_scores(t)['compound'] + 1) / 2) * 9 + 1)
         sentiment_df = df_main.groupby("Source")["sentiment_score"].mean().round(1)
