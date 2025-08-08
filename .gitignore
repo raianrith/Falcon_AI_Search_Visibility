@@ -1,2 +1,5 @@
 .env
 *pyproject.toml
+__pycache__/
+falcon-search-visibility-68a2fc074a2c.json
+*.ipynb
