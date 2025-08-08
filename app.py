@@ -390,7 +390,7 @@ with tab3:
         client = gspread.authorize(creds)
 
         # Open the Google Sheet and read data
-        sheet = client.open("CLEANED RESPONSES").sheet1
+        sheet = client.open("Falcon_Search_Visibility_Data").sheet1
         df_main = get_as_dataframe(sheet).dropna(how='all')
         df_main = df_main.dropna(axis=1, how='all')  # drop empty columns too
 
