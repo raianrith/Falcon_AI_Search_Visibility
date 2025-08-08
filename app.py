@@ -383,12 +383,14 @@ with tab3:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp_file:
             tmp_file.write(json_key.read())
             tmp_file_path = tmp_file.name
-
+        
         # Authenticate
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
         creds = ServiceAccountCredentials.from_json_keyfile_name(tmp_file_path, scope)
         client = gspread.authorize(creds)
 
+        st.divider()
+        
         # Open the Google Sheet and read data
         sheet = client.open("Falcon_Search_Visibility_Data").sheet1
         df_main = get_as_dataframe(sheet).dropna(how='all')
@@ -424,7 +426,7 @@ with tab3:
         # Response Word Count
         df_main['Response Word-Count'] = df_main['Response'].astype(str).str.split().str.len()
         word_count_ts = df_main.groupby(["Date", "Source"])["Response Word-Count"].mean().reset_index(name="Avg Word Count")
-
+        
         # Sentiment Score (rescaled to 1-10)
         df_main['sentiment_score'] = df_main['Response'].fillna('').apply(
             lambda t: ((sia.polarity_scores(t)['compound'] + 1) / 2) * 9 + 1
@@ -440,18 +442,26 @@ with tab3:
             subset = mention_rates_ts[mention_rates_ts["Branded Query"] == bq].pivot(index="Date", columns="Source", values="Falcon Mention Rate")
             st.line_chart(subset, height=250, use_container_width=True)
 
+        st.divider()
+        
         st.subheader("Falcon Brand Share Over Time")
         share_pivot = brand_share_ts.pivot(index="Date", columns="Source", values="Falcon Brand Share")
         st.line_chart(share_pivot, height=250, use_container_width=True)
 
+        st.divider()
+        
         st.subheader("Falcon URL Citation Rate Over Time")
         cite_pivot = citation_rate_ts.pivot(index="Date", columns="Source", values="Citation Rate")
         st.line_chart(cite_pivot, height=250, use_container_width=True)
 
+        st.divider()
+        
         st.subheader("Average Response Word Count")
         wc_pivot = word_count_ts.pivot(index="Date", columns="Source", values="Avg Word Count")
         st.line_chart(wc_pivot, height=250, use_container_width=True)
 
+        st.divider()
+        
         st.subheader("Average Sentiment Score (1‑10 Scale)")
         sent_pivot = sentiment_ts.pivot(index="Date", columns="Source", values="Avg Sentiment")
         st.line_chart(sent_pivot, height=250, use_container_width=True)
