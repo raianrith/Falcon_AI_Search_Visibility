@@ -408,7 +408,6 @@ with tab3:
         )
 
         # _________ TEST 
-
         # Brand Share — Non-Branded Queries Time Series
         st.subheader("📊 Brand Share Over Time (Non-Branded Queries)")
         
@@ -462,6 +461,7 @@ with tab3:
         
         plt.tight_layout()
         st.pyplot(fig)
+
         
         # _________ TEST 
 
@@ -494,8 +494,11 @@ with tab3:
             st.line_chart(subset, height=250, use_container_width=True)
 
         st.subheader("Falcon Brand Share Over Time")
-        share_pivot = brand_share_ts.pivot(index="Date", columns="Source", values="Falcon Brand Share")
+        # Falcon Brand Share Over Time (Only Falcon — from previous 'brand_share_source')
+        falcon_share_ts = brand_share_source[brand_share_source["Brand Mentioned"] == "Falcon Structures"]
+        share_pivot = falcon_share_ts.pivot(index="Date", columns="Source", values="Brand Share (%)")
         st.line_chart(share_pivot, height=250, use_container_width=True)
+
 
         st.subheader("Falcon URL Citation Rate Over Time")
         cite_pivot = citation_rate_ts.pivot(index="Date", columns="Source", values="Citation Rate")
