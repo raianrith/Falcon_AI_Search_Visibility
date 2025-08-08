@@ -8,3 +8,4 @@ seaborn
 gspread
 oauth2client
 gspread-dataframe
+dotenv
