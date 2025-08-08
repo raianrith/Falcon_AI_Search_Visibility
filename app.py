@@ -195,13 +195,13 @@ with tab2:
         df_main['Response Word-Count'] = df_main['Response'].astype(str).str.split().str.len()
         df_main['Query Number'] = pd.factorize(df_main['Query'])[0] + 1
         df_main = df_main[["Date", "Query Number", "Query", "Source", "Response", "Response Word-Count", "Branded Query", "Falcon Mentioned", "Competitors Mentioned", "Sources Cited"]]
-        
+
         st.subheader("🧹 Cleaned Dataset")
         st.dataframe(df_main, use_container_width=True, height=400)
         st.download_button("Download Cleaned CSV", df_main.to_csv(index=False), "cleaned_responses.csv", "text/csv")
 
         st.divider()
-        
+
         st.subheader("📊 Mention Rates")
         overall_rate = df_main.groupby('Source')['Falcon Mentioned'].apply(lambda x: (x == 'Y').mean() * 100).round(1)
         cols = st.columns(len(overall_rate))
@@ -212,12 +212,12 @@ with tab2:
         mention_rate = df_main.groupby(['Source', 'Branded Query'])['Falcon Mentioned'].apply(lambda x: (x == 'Y').mean() * 100).reset_index(name='Mention Rate (%)')
         pivot = mention_rate.pivot(index='Source', columns='Branded Query', values='Mention Rate (%)').rename(columns={'Y': 'Branded (%)', 'N': 'Non‑Branded (%)'}).round(1)
         st.dataframe(pivot.reset_index())
-        
+
         st.divider()
-        
+
         # Falcon URL citation detection (corrected regex)
         df_main['Falcon URL Cited'] = df_main['Response'].str.contains(r"https?://(?:www\.)?falconstructures\.com", case=False, regex=True, na=False)
-        
+
         # Citation rate chart
         cit_rate = df_main.groupby("Source")["Falcon URL Cited"].mean().mul(100).round(1)
         st.subheader("🔗 Falcon URL Citation Rate")
@@ -225,7 +225,7 @@ with tab2:
         st.bar_chart(cit_rate)
 
         st.divider()
-        
+
         df_main['sentiment_score'] = df_main['Response'].fillna('').apply(lambda t: ((sia.polarity_scores(t)['compound'] + 1) / 2) * 9 + 1)
         sentiment_df = df_main.groupby("Source")["sentiment_score"].mean().round(1)
         st.subheader("💬 Average Sentiment per LLM")
@@ -233,7 +233,7 @@ with tab2:
         st.bar_chart(sentiment_df)
 
         st.divider()
-        
+
         mask = (df_main['Falcon Mentioned'] == 'N') & df_main['Competitors Mentioned'].notna() & (df_main['Competitors Mentioned'].str.strip() != '')
         gaps = df_main[mask][["Source", "Query", "Response", "Competitors Mentioned"]]
         st.subheader("⚠️ Competitor-Only Gaps (No Falcon Mention)")
@@ -241,12 +241,12 @@ with tab2:
         st.dataframe(gaps.reset_index(drop=True), use_container_width=True)
 
         st.divider()
-        
+
         def compute_brand_share(df, query_type='Y'):
             df_subset = df[df['Branded Query'] == query_type].copy()
-        
+
             brand_mentions = []
-        
+
             for idx, row in df_subset.iterrows():
                 brands = []
                 if row['Falcon Mentioned'] == 'Y':
@@ -254,30 +254,30 @@ with tab2:
                 competitors = row['Competitors Mentioned']
                 if pd.notna(competitors) and competitors.strip():
                     brands += [x.strip() for x in competitors.split(",")]
-        
+
                 for brand in brands:
                     brand_mentions.append({"Brand": brand, "Source": row["Source"]})
-        
+
             mention_df = pd.DataFrame(brand_mentions)
             overall = mention_df["Brand"].value_counts(normalize=True).mul(100).round(1).rename("Overall Share (%)")
             by_source = mention_df.groupby(["Brand", "Source"]).size().unstack(fill_value=0)
             by_source = by_source.div(by_source.sum(axis=0), axis=1).mul(100).round(1)
-            
+
             full = pd.concat([overall, by_source], axis=1).fillna(0).reset_index().rename(columns={"index": "Brand"})
             return full.sort_values("Overall Share (%)", ascending=False)
-        
 
-        
+
+
         st.subheader("🏷️ Brand Share — Non‑Branded Queries")
         st.caption("Of all responses to Non‑Branded queries (generic, no “Falcon”), what percentage of brand mentions go to each company?")
-        
+
         # Non-Branded
         nonbranded_df = compute_brand_share(df_main, query_type='N')
         st.dataframe(nonbranded_df, use_container_width=True)
 
-        
+
         st.divider()
-        
+
         import seaborn as sns
         st.subheader("📈 Response Word Count Distribution")
         st.caption("Visualizes how long the responses are across sources.")
@@ -291,17 +291,17 @@ with tab2:
 
         st.divider()
 
-        
+
         import datetime
-        
+
         # Add current date
         today = datetime.date.today()
-        
+
         # Step 1: Branded and Non-Branded flags
         df_main['Branded Query'] = df_main['Query'].str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
         df_main['Falcon Mentioned'] = df_main['Response'].str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
         df_main['Falcon URL Cited'] = df_main['Response'].str.contains(r"https?://(?:www\.)?falconstructures\.com", case=False, na=False)
-        
+
         # Step 2: Mention Rate by Source & Query Type
         mention_rates = (
             df_main.groupby(["Source", "Branded Query"])["Falcon Mentioned"]
@@ -310,7 +310,7 @@ with tab2:
             .round(1)
             .rename(columns={'Y': 'Branded Mention Rate (%)', 'N': 'Non-Branded Mention Rate (%)'})
         )
-        
+
         # Step 3: URL Citation Rate by Source & Query Type
         citation_rates = (
             df_main.groupby(["Source", "Branded Query"])["Falcon URL Cited"]
@@ -320,7 +320,7 @@ with tab2:
             .round(1)
             .rename(columns={True: 'Branded URL Citation Rate (%)', False: 'Non-Branded URL Citation Rate (%)'})
         )
-        
+
         # Step 4: Falcon Brand Share
         def compute_brand_share(df, brand_filter):
             mentions = []
@@ -331,24 +331,24 @@ with tab2:
                 share = (falcon_mentions / total) * 100 if total > 0 else 0
                 mentions.append((source, round(share, 1)))
             return dict(mentions)
-        
+
         branded_share = compute_brand_share(df_main, df_main["Branded Query"] == 'Y')
         nonbranded_share = compute_brand_share(df_main, df_main["Branded Query"] == 'N')
-        
+
         brand_share_df = pd.DataFrame({
             "Falcon Brand Share (Branded)": pd.Series(branded_share),
             "Falcon Brand Share (Non-Branded)": pd.Series(nonbranded_share)
         })
-        
+
         # Step 5: Merge all together
         summary_df = mention_rates.join(citation_rates, how='outer').join(brand_share_df, how='outer')
         summary_df["Date"] = today
         summary_df.reset_index(inplace=True)
-        
+
         # Show in app
         st.subheader("📊 Daily Summary Metrics by Source")
         st.dataframe(summary_df, use_container_width=True)
-        
+
         # Optional: Save to CSV
         st.download_button(
             label="📥 Download Daily Summary CSV",
@@ -356,7 +356,7 @@ with tab2:
             file_name=f"Falcon_LLM_Summary_{today}.csv",
             mime="text/csv"
         )
-    
+
     else:
         st.info("Please upload the raw CSV to begin analysis.")
 # ─── TAB: TIME SERIES ANALYSIS ──────────────────────────────────────────────
@@ -390,7 +390,7 @@ with tab3:
         client = gspread.authorize(creds)
 
         # Open the Google Sheet and read data
-        sheet = client.open("Falcon_Search_Visibility_Data").sheet1
+        sheet = client.open("CLEANED RESPONSES").sheet1
         df_main = get_as_dataframe(sheet).dropna(how='all')
         df_main = df_main.dropna(axis=1, how='all')  # drop empty columns too
 
@@ -407,63 +407,10 @@ with tab3:
             .reset_index(name="Falcon Mention Rate")
         )
 
-        # _________ TEST 
-        # Brand Share — Non-Branded Queries Time Series
-        st.subheader("📊 Brand Share Over Time (Non-Branded Queries)")
-        
-        # Step 1: Filter only non-branded queries
-        non_branded = df_main[df_main["Branded Query"] == "N"].copy()
-        
-        # Step 2: Extract brand from the 'Response' using a custom list
-        brands = [
-            "Falcon Structures", "WillScot", "Conexwest", "BMarko",
-            "Giant", "Mobile Modular", "ROXBOX", "XCaliber"
-        ]
-        
-        # Step 3: Assign which brand is mentioned in each row
-        def get_brand(text):
-            for b in brands:
-                if pd.notnull(text) and b.lower() in text.lower():
-                    return b
-            return None
-        
-        non_branded["Brand Mentioned"] = non_branded["Response"].apply(get_brand)
-        
-        # Step 4: Compute overall brand share (regardless of source)
-        overall_brand_share = (
-            non_branded.groupby(["Date", "Brand Mentioned"])
-            .size().div(non_branded.groupby("Date").size(), axis=0).mul(100)
-            .reset_index(name="Overall Share (%)")
-        )
-        
-        # Step 5: Compute brand share by source
-        brand_share_source = (
-            non_branded.groupby(["Date", "Source", "Brand Mentioned"])
-            .size().div(non_branded.groupby(["Date", "Source"]).size(), axis=0).mul(100)
-            .reset_index(name="Brand Share (%)")
-        )
-        
-        # 🎯 Plot 1: Overall Share by Brand (Time Series)
-        overall_pivot = overall_brand_share.pivot(index="Date", columns="Brand Mentioned", values="Overall Share (%)")
-        st.line_chart(overall_pivot, use_container_width=True, height=300)
-        
-        # 🎯 Plots 2-4: Share by Brand & Source (Gemini, OpenAI, Perplexity)
-        import matplotlib.pyplot as plt
-        
-        fig, axs = plt.subplots(1, 3, figsize=(18, 4), sharey=True)
-        
-        for i, src in enumerate(["Gemini", "OpenAI", "Perplexity"]):
-            sub = brand_share_source[brand_share_source["Source"] == src]
-            pivot = sub.pivot(index="Date", columns="Brand Mentioned", values="Brand Share (%)")
-            axs[i].set_title(f"{src} Brand Share")
-            pivot.plot(ax=axs[i])
-            axs[i].legend().set_visible(False)
-        
-        plt.tight_layout()
-        st.pyplot(fig)
-
-        
-        # _________ TEST 
+        # Falcon Brand Share by Source (simplified to Falcon mention % across all responses)
+        brand_share_ts = df_main.groupby(["Date", "Source"]).apply(
+            lambda g: (g["Falcon Mentioned"] == "Y").sum() / len(g) * 100
+        ).reset_index(name="Falcon Brand Share")
 
         # Falcon URL Citation Rate
         df_main["Falcon URL Cited"] = df_main["Sources Cited"].str.contains("falconstructures.com", na=False, case=False)
@@ -494,11 +441,8 @@ with tab3:
             st.line_chart(subset, height=250, use_container_width=True)
 
         st.subheader("Falcon Brand Share Over Time")
-        # Falcon Brand Share Over Time (Only Falcon — from previous 'brand_share_source')
-        falcon_share_ts = brand_share_source[brand_share_source["Brand Mentioned"] == "Falcon Structures"]
-        share_pivot = falcon_share_ts.pivot(index="Date", columns="Source", values="Brand Share (%)")
+        share_pivot = brand_share_ts.pivot(index="Date", columns="Source", values="Falcon Brand Share")
         st.line_chart(share_pivot, height=250, use_container_width=True)
-
 
         st.subheader("Falcon URL Citation Rate Over Time")
         cite_pivot = citation_rate_ts.pivot(index="Date", columns="Source", values="Citation Rate")
@@ -514,6 +458,3 @@ with tab3:
 
     else:
         st.warning("⬆️ Please upload your service account `.json` file to begin.")
-
-
-
