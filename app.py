@@ -1,6 +1,8 @@
 import os
 import re
 import time
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import google.generativeai as genai
 import matplotlib.pyplot as plt
@@ -20,8 +22,7 @@ sia = SentimentIntensityAnalyzer()
 # ─── PAGE CONFIG & GLOBAL CSS ─────────────────────────────────────────────────
 st.set_page_config(page_title="Falcon Structures LLM Tool", layout="wide")
 
-
-# Custom CSS
+# Custom CSS (UI EXACTLY AS PROVIDED)
 st.markdown(
     """
 <style>
@@ -81,8 +82,8 @@ st.markdown(
     """
 <div style='text-align:center; padding:1rem 0;'>
   <img src='https://github.com/raianrith/AI-Client-Research-Tool/blob/main/Weidert_Logo_primary-logomark-antique.png?raw=true' width='60'/>
-  <h1>Falcon AI‑Powered LLM Search Visibility Tool</h1>
-  <h4 style='color:#ccc;'>Created by Weidert Group, Inc.</h4>
+  <h1>Falcon AI-Powered LLM Search Visibility Tool</h1>
+  <h4 style='color:#ccc;'>Created by Weidert Group, Inc.</h4>
 </div>
 """,
     unsafe_allow_html=True,
@@ -108,44 +109,46 @@ genai.configure(api_key=gemini_key)
 gemini_model = genai.GenerativeModel(gemini_model_name)
 perplexity_client = OpenAI(api_key=perp_key, base_url="https://api.perplexity.ai")
 
-SYSTEM_PROMPT = "Provide a helpful answer to the user’s query."
+# Thread-safety for Gemini
+gemini_lock = threading.Lock()
 
+SYSTEM_PROMPT = "Provide a helpful answer to the user’s query."
 
 def get_openai_response(q):
     try:
         r = openai_client.chat.completions.create(
             model=openai_model,
             messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": q}],
+            timeout=30,  # fail fast if a call hangs
         )
         return r.choices[0].message.content.strip()
     except Exception as e:
         st.error(f"OpenAI error: {e}")
         return "ERROR"
 
-
 def get_gemini_response(q):
     try:
-        r = gemini_model.generate_content(q)
+        # Gemini SDKs can be touchy with threading; use a small lock
+        with gemini_lock:
+            r = gemini_model.generate_content(q)
         return r.candidates[0].content.parts[0].text.strip()
     except Exception as e:
         st.error(f"Gemini error: {e}")
         return "ERROR"
-
 
 def get_perplexity_response(q):
     try:
         r = perplexity_client.chat.completions.create(
             model=perplexity_model_name,
             messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": q}],
+            timeout=30,
         )
         return r.choices[0].message.content.strip()
     except Exception as e:
         st.error(f"Perplexity error: {e}")
         return "ERROR"
 
-
 # ─── TABS ──────────────────────────────────────────────────────────────────────
-
 tab1, tab2, tab3 = st.tabs(
     ["Multi-LLM Response Generator", "Search Visibility Analysis", "Time Series Analysis"]
 )
@@ -171,19 +174,42 @@ with tab1:
         if not qs:
             st.warning("Please enter at least one query.")
         else:
+            # Parallelize all calls (per query × 3 providers) with a sane cap
+            MAX_WORKERS = min(9, max(3, len(qs) * 3))
+
+            def call_one(src, fn, q):
+                txt = fn(q)
+                return {"Query": q, "Source": src, "Response": txt}
+
+            futures = []
             results = []
             with st.spinner("Gathering responses…"):
-                for q in qs:
-                    for source, fn in [
-                        ("OpenAI", get_openai_response),
-                        ("Gemini", get_gemini_response),
-                        ("Perplexity", get_perplexity_response),
-                    ]:
-                        txt = fn(q)
-                        results.append({"Query": q, "Source": source, "Response": txt})
-                        time.sleep(1)
+                with ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
+                    for q in qs:
+                        for source, fn in [
+                            ("OpenAI", get_openai_response),
+                            ("Gemini", get_gemini_response),
+                            ("Perplexity", get_perplexity_response),
+                        ]:
+                            futures.append(ex.submit(call_one, source, fn, q))
+
+                    for fut in as_completed(futures):
+                        try:
+                            results.append(fut.result())
+                        except Exception as e:
+                            st.error(f"Worker error: {e}")
 
             df = pd.DataFrame(results)[["Query", "Source", "Response"]]
+
+            # Keep a predictable order: group by original query and source order
+            desired_order = pd.MultiIndex.from_product([qs, ["OpenAI", "Gemini", "Perplexity"]]).to_list()
+            df["__order"] = list(zip(df["Query"], df["Source"]))
+            df = (
+                df.set_index("__order")
+                .loc[[k for k in desired_order if k in df.index]]
+                .reset_index(drop=True)
+            )
+
             st.dataframe(df, use_container_width=True)
             st.download_button("Download CSV", df.to_csv(index=False), "responses.csv", "text/csv")
 
@@ -197,7 +223,7 @@ with tab2:
         competitors = [
             "ROXBOX",
             "Wilmot",
-            "Pac‑Van",
+            "Pac-Van",
             "BMarko",
             "Giant",
             "XCaliber",
@@ -280,7 +306,7 @@ with tab2:
         )
         pivot = (
             mention_rate.pivot(index="Source", columns="Branded Query", values="Mention Rate (%)")
-            .rename(columns={"Y": "Branded (%)", "N": "Non‑Branded (%)"})
+            .rename(columns={"Y": "Branded (%)", "N": "Non-Branded (%)"})
             .round(1)
         )
         st.dataframe(pivot.reset_index())
@@ -363,9 +389,9 @@ with tab2:
             )
             return full.sort_values("Overall Share (%)", ascending=False)
 
-        st.subheader("🏷️ Brand Share — Non‑Branded Queries")
+        st.subheader("🏷️ Brand Share — Non-Branded Queries")
         st.caption(
-            "Of all responses to Non‑Branded queries (generic, no “Falcon”), what percentage of brand mentions go to each company?"
+            "Of all responses to Non-Branded queries (generic, no “Falcon”), what percentage of brand mentions go to each company?"
         )
 
         # Non-Branded
@@ -431,7 +457,7 @@ with tab2:
         )
 
         # Step 4: Falcon Brand Share
-        def compute_brand_share(df, brand_filter):
+        def compute_brand_share_simple(df, brand_filter):
             mentions = []
             for source in df["Source"].unique():
                 sub_df = df[(df["Source"] == source) & brand_filter]
@@ -443,8 +469,8 @@ with tab2:
                 mentions.append((source, round(share, 1)))
             return dict(mentions)
 
-        branded_share = compute_brand_share(df_main, df_main["Branded Query"] == "Y")
-        nonbranded_share = compute_brand_share(df_main, df_main["Branded Query"] == "N")
+        branded_share = compute_brand_share_simple(df_main, df_main["Branded Query"] == "Y")
+        nonbranded_share = compute_brand_share_simple(df_main, df_main["Branded Query"] == "N")
 
         brand_share_df = pd.DataFrame(
             {
@@ -474,9 +500,8 @@ with tab2:
 
     else:
         st.info("Please upload the raw CSV to begin analysis.")
+
 # ─── TAB: TIME SERIES ANALYSIS ──────────────────────────────────────────────
-
-
 with tab3:
     st.markdown("### 📈 Time Series Analysis")
     st.caption("Track changes in key search visibility metrics over time.")
@@ -599,7 +624,7 @@ with tab3:
 
         st.divider()
 
-        st.subheader("Average Sentiment Score (1‑10 Scale)")
+        st.subheader("Average Sentiment Score (1-10 Scale)")
         sent_pivot = sentiment_ts.pivot(index="Date", columns="Source", values="Avg Sentiment")
         st.line_chart(sent_pivot, height=250, use_container_width=True)
 
