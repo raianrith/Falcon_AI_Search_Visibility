@@ -11,3 +11,4 @@ gspread-dataframe
 python-dotenv
 plotly
 numpy
+pyyaml
