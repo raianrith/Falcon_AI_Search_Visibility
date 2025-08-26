@@ -644,9 +644,9 @@ with tab2:
         df_main['Competitor_Positions'] = [comp[1] for comp in competitor_data]
         
         # Original columns
-        df_main['Branded_Query'] = df_main['Query'].astype(str).str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
-        df_main['Falcon_Mentioned'] = df_main['Response'].astype(str).str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
-        df_main['Sources_Cited'] = df_main['Response'].astype(str).str.findall(r'(https?://\S+)').apply(lambda lst: ', '.join(lst) if lst else '')
+        df_main['Branded_Query'] = df_main['Query'].str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
+        df_main['Falcon_Mentioned'] = df_main['Response'].str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
+        df_main['Sources_Cited'] = df_main['Response'].str.findall(r'(https?://\S+)').apply(lambda lst: ', '.join(lst) if lst else '')
         df_main['Response_Word_Count'] = df_main['Response'].astype(str).str.split().str.len()
         df_main['Query_Number'] = pd.factorize(df_main['Query'])[0] + 1
         
@@ -720,399 +720,115 @@ with tab2:
 with tab3:
     st.markdown("### 🏆 Competitor Comparison Mode")
     
-    # Option selection: Upload file or run new analysis
-    analysis_mode = st.radio(
-        "Choose Analysis Mode:",
-        ["Upload Existing Results", "Run New Competitor Analysis"],
-        horizontal=True
+    # Competitor selection
+    selected_competitors = st.multiselect(
+        "Select Competitors to Compare:",
+        ["Falcon Structures"] + COMPETITORS,
+        default=["Falcon Structures", "ROXBOX", "Mobile Modular", "WillScot"]
     )
     
-    if analysis_mode == "Upload Existing Results":
-        st.markdown("**Upload a responses CSV file generated from the Multi-LLM Response Generator:**")
-        
-        # File upload for existing results
-        competitor_file = st.file_uploader(
-            "Select your responses CSV file:",
-            type="csv",
-            key="competitor_upload",
-            help="Upload a CSV file with Query, Source, and Response columns"
-        )
-        
-        if competitor_file:
-            try:
-                df_comp = pd.read_csv(competitor_file)
-                
-                # Validate required columns
-                required_cols = ['Query', 'Source', 'Response']
-                missing_cols = [col for col in required_cols if col not in df_comp.columns]
-                
-                if missing_cols:
-                    st.error(f"Missing required columns: {', '.join(missing_cols)}")
-                    st.info("Required columns: Query, Source, Response")
-                else:
-                    st.success(f"✅ Loaded {len(df_comp)} responses from {len(df_comp['Query'].unique())} queries")
-                    
-                    # Show data preview
-                    with st.expander("📋 Data Preview", expanded=False):
-                        st.dataframe(df_comp.head(10), use_container_width=True)
-                    
-                    # Competitor selection
-                    st.subheader("🎯 Select Competitors to Analyze")
-                    selected_competitors = st.multiselect(
-                        "Choose competitors to compare:",
-                        ["Falcon Structures"] + COMPETITORS,
-                        default=["Falcon Structures", "ROXBOX", "Mobile Modular", "WillScot"],
-                        help="Select the competitors you want to include in the comparison analysis"
-                    )
-                    
-                    if selected_competitors and st.button("🔍 Analyze Competitor Performance", key="analyze_uploaded"):
-                        with st.spinner("Analyzing competitor performance..."):
-                            # Analyze mentions for each selected competitor
-                            competitor_analysis = {}
-                            
-                            for competitor in selected_competitors:
-                                mentions = df_comp['Response'].astype(str).str.contains(competitor, case=False, na=False)
-                                positions = df_comp['Response'].apply(lambda x: analyze_position(x, competitor))
-                                contexts = df_comp['Response'].apply(lambda x: analyze_context(x, competitor))
-                                
-                                competitor_analysis[competitor] = {
-                                    'mention_rate': (mentions.sum() / len(df_comp) * 100),
-                                    'total_mentions': mentions.sum(),
-                                    'avg_position': sum([p[1] for p in positions if p[1] > 0]) / max(sum([1 for p in positions if p[1] > 0]), 1),
-                                    'positive_context': sum([1 for c in contexts if c[0] == 'Positive']) / len(df_comp) * 100,
-                                    'negative_context': sum([1 for c in contexts if c[0] == 'Negative']) / len(df_comp) * 100,
-                                    'first_third_rate': sum([1 for p in positions if p[0] == 'First Third']) / len(df_comp) * 100,
-                                    'avg_sentiment': np.mean([c[1] for c in contexts if c[1] != 0])
-                                }
-                            
-                            # Display results
-                            display_competitor_analysis(competitor_analysis, df_comp, selected_competitors)
-                            
-            except Exception as e:
-                st.error(f"Error reading CSV file: {e}")
-                st.info("Please ensure the file is a valid CSV with Query, Source, and Response columns.")
+    # Side-by-side comparison queries
+    comparison_queries = st.text_area(
+        "Comparison Queries (one per line):",
+        height=150,
+        placeholder="Compare modular office companies\nBest portable building solutions\nModular office rental vs purchase"
+    )
     
-    else:  # Run New Competitor Analysis
-        st.markdown("**Generate new responses specifically for competitor comparison:**")
-        
-        # Competitor selection
-        selected_competitors = st.multiselect(
-            "Select Competitors to Compare:",
-            ["Falcon Structures"] + COMPETITORS,
-            default=["Falcon Structures", "ROXBOX", "Mobile Modular", "WillScot"]
-        )
-        
-        # Side-by-side comparison queries
-        comparison_queries = st.text_area(
-            "Comparison Queries (one per line):",
-            height=150,
-            placeholder="Compare modular office companies\nBest portable building solutions\nModular office rental vs purchase",
-            help="Enter queries that are likely to mention multiple competitors"
-        )
-        
-        if st.button("🔍 Run New Competitor Analysis", key="new_competitor_analysis"):
-            if comparison_queries.strip():
-                queries = [q.strip() for q in comparison_queries.splitlines() if q.strip()]
+    if st.button("🔍 Run Competitor Analysis", key="competitor_analysis"):
+        if comparison_queries.strip():
+            queries = [q.strip() for q in comparison_queries.splitlines() if q.strip()]
+            
+            with st.spinner("Running competitor comparison analysis..."):
+                results = process_queries_parallel(queries)
+                df_comp = pd.DataFrame(results)
                 
-                with st.spinner("Running competitor comparison analysis..."):
-                    results = process_queries_parallel(queries)
-                    df_comp = pd.DataFrame(results)
+                # Analyze mentions for each selected competitor
+                competitor_analysis = {}
+                
+                for competitor in selected_competitors:
+                    mentions = df_comp['Response'].str.contains(competitor, case=False, na=False)
+                    positions = df_comp['Response'].apply(lambda x: analyze_position(x, competitor))
+                    contexts = df_comp['Response'].apply(lambda x: analyze_context(x, competitor))
                     
-                    # Analyze mentions for each selected competitor
-                    competitor_analysis = {}
-                    
-                    for competitor in selected_competitors:
-                        mentions = df_comp['Response'].astype(str).str.contains(competitor, case=False, na=False)
-                        positions = df_comp['Response'].apply(lambda x: analyze_position(x, competitor))
-                        contexts = df_comp['Response'].apply(lambda x: analyze_context(x, competitor))
+                    competitor_analysis[competitor] = {
+                        'mention_rate': (mentions.sum() / len(df_comp) * 100),
+                        'avg_position': sum([p[1] for p in positions if p[1] > 0]) / max(sum([1 for p in positions if p[1] > 0]), 1),
+                        'positive_context': sum([1 for c in contexts if c[0] == 'Positive']) / len(df_comp) * 100,
+                        'first_third_rate': sum([1 for p in positions if p[0] == 'First Third']) / len(df_comp) * 100
+                    }
+                
+                # Display comparison matrix
+                st.subheader("🏆 Competitor Performance Matrix")
+                
+                comparison_df = pd.DataFrame(competitor_analysis).T.round(1)
+                comparison_df.columns = ['Mention Rate (%)', 'Avg Position', 'Positive Context (%)', 'First Third (%)']
+                
+                # Color-code the dataframe
+                st.dataframe(
+                    comparison_df.style.background_gradient(subset=['Mention Rate (%)'], cmap='RdYlGn')
+                                      .background_gradient(subset=['Positive Context (%)'], cmap='RdYlGn')
+                                      .background_gradient(subset=['First Third (%)'], cmap='RdYlGn')
+                                      .background_gradient(subset=['Avg Position'], cmap='RdYlGn_r'),
+                    use_container_width=True
+                )
+                
+                # Visualization
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    # Mention rate comparison
+                    mention_rates = [competitor_analysis[comp]['mention_rate'] for comp in selected_competitors]
+                    fig = px.bar(x=selected_competitors, y=mention_rates, 
+                                title="Mention Rate Comparison",
+                                labels={'x': 'Competitor', 'y': 'Mention Rate (%)'})
+                    st.plotly_chart(fig, use_container_width=True)
+                
+                with col2:
+                    # Position comparison
+                    first_third_rates = [competitor_analysis[comp]['first_third_rate'] for comp in selected_competitors]
+                    fig = px.bar(x=selected_competitors, y=first_third_rates, 
+                                title="First Third Position Rate",
+                                labels={'x': 'Competitor', 'y': 'First Third Rate (%)'})
+                    st.plotly_chart(fig, use_container_width=True)
+                
+                # Side-by-side response comparison
+                st.subheader("📄 Side-by-Side Response Analysis")
+                
+                for i, query in enumerate(queries):
+                    with st.expander(f"Query {i+1}: {query}", expanded=False):
+                        query_responses = df_comp[df_comp['Query'] == query]
                         
-                        competitor_analysis[competitor] = {
-                            'mention_rate': (mentions.sum() / len(df_comp) * 100),
-                            'total_mentions': mentions.sum(),
-                            'avg_position': sum([p[1] for p in positions if p[1] > 0]) / max(sum([1 for p in positions if p[1] > 0]), 1),
-                            'positive_context': sum([1 for c in contexts if c[0] == 'Positive']) / len(df_comp) * 100,
-                            'negative_context': sum([1 for c in contexts if c[0] == 'Negative']) / len(df_comp) * 100,
-                            'first_third_rate': sum([1 for p in positions if p[0] == 'First Third']) / len(df_comp) * 100,
-                            'avg_sentiment': np.mean([c[1] for c in contexts if c[1] != 0])
-                        }
-                    
-                    # Display results
-                    display_competitor_analysis(competitor_analysis, df_comp, selected_competitors)
-            else:
-                st.warning("Please enter at least one comparison query.")
-
-def display_competitor_analysis(competitor_analysis, df_comp, selected_competitors):
-    """Display comprehensive competitor analysis results"""
-    
-    # Performance Matrix
-    st.subheader("🏆 Competitor Performance Matrix")
-    
-    comparison_df = pd.DataFrame(competitor_analysis).T.round(1)
-    comparison_df.columns = [
-        'Mention Rate (%)', 'Total Mentions', 'Avg Position', 
-        'Positive Context (%)', 'Negative Context (%)', 
-        'First Third (%)', 'Avg Sentiment'
-    ]
-    
-    # Reorder to put Falcon first if it exists
-    if 'Falcon Structures' in comparison_df.index:
-        falcon_row = comparison_df.loc[['Falcon Structures']]
-        other_rows = comparison_df.drop('Falcon Structures').sort_values('Mention Rate (%)', ascending=False)
-        comparison_df = pd.concat([falcon_row, other_rows])
-    
-    # Color-code the dataframe
-    styled_df = comparison_df.style.background_gradient(
-        subset=['Mention Rate (%)'], cmap='RdYlGn'
-    ).background_gradient(
-        subset=['Positive Context (%)'], cmap='RdYlGn'
-    ).background_gradient(
-        subset=['First Third (%)'], cmap='RdYlGn'
-    ).background_gradient(
-        subset=['Avg Position'], cmap='RdYlGn_r'
-    ).background_gradient(
-        subset=['Avg Sentiment'], cmap='RdYlGn'
-    ).background_gradient(
-        subset=['Negative Context (%)'], cmap='RdYlGn_r'
-    ).format({
-        'Mention Rate (%)': '{:.1f}%',
-        'Positive Context (%)': '{:.1f}%', 
-        'Negative Context (%)': '{:.1f}%',
-        'First Third (%)': '{:.1f}%',
-        'Avg Position': '{:.1f}',
-        'Avg Sentiment': '{:.2f}',
-        'Total Mentions': '{:.0f}'
-    })
-    
-    st.dataframe(styled_df, use_container_width=True)
-    
-    # Key Insights
-    st.subheader("💡 Key Insights")
-    
-    # Find top performers
-    top_mention = comparison_df['Mention Rate (%)'].idxmax()
-    top_position = comparison_df.loc[comparison_df['First Third (%)'].idxmax()]
-    top_sentiment = comparison_df.loc[comparison_df['Avg Sentiment'].idxmax()]
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.metric(
-            "Most Mentioned",
-            top_mention,
-            f"{comparison_df.loc[top_mention, 'Mention Rate (%)']:.1f}%"
-        )
-    
-    with col2:
-        st.metric(
-            "Best Positioning",
-            top_position.name,
-            f"{top_position['First Third (%)']:.1f}% first mentions"
-        )
-    
-    with col3:
-        st.metric(
-            "Most Positive Sentiment",
-            top_sentiment.name,
-            f"{top_sentiment['Avg Sentiment']:.2f} sentiment score"
-        )
-    
-    # Visualization Section
-    st.subheader("📊 Performance Visualizations")
-    
-    # Create comprehensive comparison charts
-    fig = make_subplots(
-        rows=2, cols=2,
-        subplot_titles=('Mention Rate Comparison', 'Position Performance', 
-                       'Sentiment Analysis', 'Context Breakdown'),
-        specs=[[{"type": "bar"}, {"type": "bar"}],
-               [{"type": "bar"}, {"type": "bar"}]]
-    )
-    
-    competitors = comparison_df.index.tolist()
-    colors = px.colors.qualitative.Set3[:len(competitors)]
-    
-    # Mention Rate
-    fig.add_trace(
-        go.Bar(
-            name='Mention Rate',
-            x=competitors,
-            y=comparison_df['Mention Rate (%)'],
-            marker_color=colors,
-            text=[f"{x:.1f}%" for x in comparison_df['Mention Rate (%)']],
-            textposition='auto'
-        ),
-        row=1, col=1
-    )
-    
-    # Position Performance
-    fig.add_trace(
-        go.Bar(
-            name='First Third Rate',
-            x=competitors,
-            y=comparison_df['First Third (%)'],
-            marker_color=colors,
-            text=[f"{x:.1f}%" for x in comparison_df['First Third (%)']],
-            textposition='auto'
-        ),
-        row=1, col=2
-    )
-    
-    # Sentiment Analysis
-    fig.add_trace(
-        go.Bar(
-            name='Average Sentiment',
-            x=competitors,
-            y=comparison_df['Avg Sentiment'],
-            marker_color=colors,
-            text=[f"{x:.2f}" for x in comparison_df['Avg Sentiment']],
-            textposition='auto'
-        ),
-        row=2, col=1
-    )
-    
-    # Context Breakdown (Positive vs Negative)
-    fig.add_trace(
-        go.Bar(
-            name='Positive Context',
-            x=competitors,
-            y=comparison_df['Positive Context (%)'],
-            marker_color='lightgreen',
-            text=[f"{x:.1f}%" for x in comparison_df['Positive Context (%)']],
-            textposition='auto'
-        ),
-        row=2, col=2
-    )
-    
-    fig.add_trace(
-        go.Bar(
-            name='Negative Context',
-            x=competitors,
-            y=comparison_df['Negative Context (%)'],
-            marker_color='lightcoral',
-            text=[f"{x:.1f}%" for x in comparison_df['Negative Context (%)']],
-            textposition='auto'
-        ),
-        row=2, col=2
-    )
-    
-    fig.update_layout(
-        height=800,
-        showlegend=False,
-        title_text="Comprehensive Competitor Performance Analysis"
-    )
-    
-    # Update y-axes labels
-    fig.update_yaxes(title_text="Mention Rate (%)", row=1, col=1)
-    fig.update_yaxes(title_text="First Third Rate (%)", row=1, col=2)
-    fig.update_yaxes(title_text="Sentiment Score", row=2, col=1)
-    fig.update_yaxes(title_text="Context Rate (%)", row=2, col=2)
-    
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Side-by-side response comparison
-    st.subheader("📄 Side-by-Side Response Analysis")
-    
-    unique_queries = df_comp['Query'].unique()
-    
-    for i, query in enumerate(unique_queries[:5]):  # Limit to first 5 queries for readability
-        with st.expander(f"Query {i+1}: {query}", expanded=False):
-            query_responses = df_comp[df_comp['Query'] == query]
-            
-            # Create columns for each source
-            sources = query_responses['Source'].unique()
-            cols = st.columns(len(sources))
-            
-            for col, source in zip(cols, sources):
-                with col:
-                    st.markdown(f"**{source}**")
-                    
-                    source_response = query_responses[query_responses['Source'] == source]['Response'].iloc[0]
-                    
-                    # Highlight competitor mentions
-                    highlighted_text = str(source_response)
-                    competitor_mentions = []
-                    
-                    for competitor in selected_competitors:
-                        if competitor.lower() in highlighted_text.lower():
-                            # Simple highlighting
-                            highlighted_text = re.sub(
-                                f'({re.escape(competitor)})',
-                                f'**{competitor}**',
-                                highlighted_text,
-                                flags=re.IGNORECASE
-                            )
-                            competitor_mentions.append(competitor)
-                    
-                    # Show truncated response
-                    if len(highlighted_text) > 500:
-                        highlighted_text = highlighted_text[:500] + "..."
-                    
-                    st.markdown(highlighted_text)
-                    
-                    # Show competitor metrics for this response
-                    if competitor_mentions:
-                        st.markdown("**Competitors Found:**")
-                        for competitor in competitor_mentions:
-                            pos_info = analyze_position(source_response, competitor)
-                            context_info = analyze_context(source_response, competitor)
-                            
-                            # Color coding based on position
-                            if pos_info[0] == "First Third":
-                                color_class = "🟢"
-                            elif pos_info[0] == "Middle Third":
-                                color_class = "🟡"
-                            elif pos_info[0] == "Last Third":
-                                color_class = "🔴"
-                            else:
-                                color_class = "⚪"
-                            
-                            # Sentiment emoji
-                            sentiment_emoji = "😊" if context_info[0] == "Positive" else "😐" if context_info[0] == "Neutral" else "😞"
-                            
-                            st.markdown(f"{color_class} {sentiment_emoji} **{competitor}**: {pos_info[0]} | {context_info[0]}")
-                    else:
-                        st.markdown("*No selected competitors mentioned*")
-    
-    # Export options
-    st.divider()
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Download detailed results
-        detailed_results = []
-        for _, row in df_comp.iterrows():
-            for competitor in selected_competitors:
-                pos_info = analyze_position(row['Response'], competitor)
-                context_info = analyze_context(row['Response'], competitor)
-                mentioned = competitor.lower() in str(row['Response']).lower()
-                
-                detailed_results.append({
-                    'Query': row['Query'],
-                    'Source': row['Source'],
-                    'Competitor': competitor,
-                    'Mentioned': 'Yes' if mentioned else 'No',
-                    'Position': pos_info[0],
-                    'Context': context_info[0],
-                    'Sentiment_Score': context_info[1]
-                })
-        
-        detailed_df = pd.DataFrame(detailed_results)
-        
-        st.download_button(
-            "📥 Download Detailed Analysis",
-            detailed_df.to_csv(index=False),
-            f"competitor_analysis_detailed_{datetime.now().strftime('%Y%m%d')}.csv",
-            "text/csv"
-        )
-    
-    with col2:
-        st.download_button(
-            "📊 Download Performance Matrix",
-            comparison_df.to_csv(),
-            f"competitor_performance_matrix_{datetime.now().strftime('%Y%m%d')}.csv",
-            "text/csv"
-        )
+                        cols = st.columns(len(query_responses))
+                        for col, (_, response_row) in zip(cols, query_responses.iterrows()):
+                            with col:
+                                st.markdown(f"**{response_row['Source']}**")
+                                
+                                # Highlight competitor mentions
+                                response_text = response_row['Response']
+                                for competitor in selected_competitors:
+                                    if competitor.lower() in response_text.lower():
+                                        # Simple highlighting (could be enhanced with HTML)
+                                        response_text = response_text.replace(
+                                            competitor, f"**{competitor}**"
+                                        )
+                                
+                                st.markdown(response_text[:500] + "..." if len(response_text) > 500 else response_text)
+                                
+                                # Show metrics for this response
+                                for competitor in selected_competitors:
+                                    if competitor.lower() in response_row['Response'].lower():
+                                        pos_info = analyze_position(response_row['Response'], competitor)
+                                        context_info = analyze_context(response_row['Response'], competitor)
+                                        
+                                        color_class = "position-first" if pos_info[0] == "First Third" else \
+                                                     "position-middle" if pos_info[0] == "Middle Third" else \
+                                                     "position-last" if pos_info[0] == "Last Third" else "position-none"
+                                        
+                                        st.markdown(f"""
+                                        <span class="position-indicator {color_class}">
+                                            {competitor}: {pos_info[0]} | {context_info[0]}
+                                        </span>
+                                        """, unsafe_allow_html=True)
 
 # ─── TAB 4: EXECUTIVE DASHBOARD ─────────────────────────────────────────────
 with tab4:
@@ -1129,8 +845,8 @@ with tab4:
         if 'Response' in df_dashboard.columns:
             # Process data for dashboard
             df_dashboard['Date'] = pd.to_datetime(df_dashboard.get('Date', datetime.today().date()))
-            df_dashboard['Falcon_Mentioned'] = df_dashboard['Response'].astype(str).str.contains('falcon', case=False, na=False)
-            df_dashboard['Branded_Query'] = df_dashboard.get('Query', pd.Series()).astype(str).str.contains('falcon', case=False, na=False)
+            df_dashboard['Falcon_Mentioned'] = df_dashboard['Response'].str.contains('falcon', case=False, na=False)
+            df_dashboard['Branded_Query'] = df_dashboard.get('Query', '').astype(str).str.contains('falcon', case=False, na=False)
             
             # Enhanced analytics for dashboard
             position_data = df_dashboard['Response'].apply(lambda x: analyze_position(x, "Falcon"))
@@ -1399,8 +1115,8 @@ with tab5:
                         df_ts['Date'] = pd.to_datetime(df_ts['Date'])
                         
                         # Enhanced time series processing
-                        df_ts['Falcon_Mentioned'] = df_ts['Response'].astype(str).str.contains('falcon', case=False, na=False)
-                        df_ts['Branded_Query'] = df_ts['Query'].astype(str).str.contains('falcon', case=False, na=False)
+                        df_ts['Falcon_Mentioned'] = df_ts['Response'].str.contains('falcon', case=False, na=False)
+                        df_ts['Branded_Query'] = df_ts['Query'].str.contains('falcon', case=False, na=False)
                         
                         # Add enhanced analytics
                         position_data = df_ts['Response'].apply(lambda x: analyze_position(x, "Falcon"))
@@ -1413,7 +1129,7 @@ with tab5:
                         df_ts['Competitors_Count'] = [len(c[0]) for c in competitor_data]
                         
                         # URL Citation
-                        df_ts["Falcon_URL_Cited"] = df_ts.get("Sources_Cited", pd.Series()).astype(str).str.contains("falconstructures.com", na=False, case=False)
+                        df_ts["Falcon_URL_Cited"] = df_ts.get("Sources_Cited", "").str.contains("falconstructures.com", na=False, case=False)
                         
                         st.success(f"✅ Loaded {len(df_ts)} records from {len(df_ts['Date'].unique())} dates")
                         
