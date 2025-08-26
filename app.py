@@ -19,8 +19,13 @@ from datetime import datetime, date
 import numpy as np
 
 # Download required NLTK data
-nltk.download('vader_lexicon', quiet=True)
-nltk.download('punkt', quiet=True)
+try:
+    nltk.download('vader_lexicon', quiet=True)
+    nltk.download('punkt', quiet=True)
+    nltk.download('punkt_tab', quiet=True)  # For newer NLTK versions
+except Exception as e:
+    st.error(f"Error downloading NLTK data: {e}")
+    # Fallback to basic sentence splitting if NLTK punkt is not available
 
 sia = SentimentIntensityAnalyzer()
 
@@ -264,13 +269,26 @@ def get_perplexity_response(q):
         return "ERROR"
 
 # ─── ENHANCED ANALYSIS FUNCTIONS ─────────────────────────────────────────────
+def safe_sentence_tokenize(text):
+    """Safe sentence tokenization with fallback"""
+    try:
+        return nltk.sent_tokenize(str(text))
+    except:
+        # Fallback: simple sentence splitting on periods, exclamations, questions
+        import re
+        sentences = re.split(r'[.!?]+', str(text))
+        return [s.strip() for s in sentences if s.strip()]
+
 def analyze_position(text, brand="Falcon"):
     """Analyze where in the response the brand appears"""
     if not text or pd.isna(text):
         return "Not Mentioned", 0, "N/A"
     
-    sentences = nltk.sent_tokenize(str(text))
+    sentences = safe_sentence_tokenize(str(text))
     total_sentences = len(sentences)
+    
+    if total_sentences == 0:
+        return "Not Mentioned", 0, "N/A"
     
     for i, sentence in enumerate(sentences):
         if brand.lower() in sentence.lower():
@@ -289,7 +307,7 @@ def analyze_context(text, brand="Falcon"):
     if not text or pd.isna(text) or brand.lower() not in text.lower():
         return "Not Mentioned", 0, []
     
-    sentences = nltk.sent_tokenize(str(text))
+    sentences = safe_sentence_tokenize(str(text))
     contexts = []
     
     for sentence in sentences:
@@ -326,7 +344,7 @@ def extract_competitors_detailed(text):
     found_competitors = []
     positions = {}
     
-    sentences = nltk.sent_tokenize(str(text))
+    sentences = safe_sentence_tokenize(str(text))
     
     for match in matches:
         competitor = match.group(1)
