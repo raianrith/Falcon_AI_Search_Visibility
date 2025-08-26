@@ -398,7 +398,7 @@ with tab2:
 
 
         st.subheader("🏷️ Brand Share — Non‑Branded Queries")
-        st.caption("Of all responses to Non‑Branded queries (generic, no "Falcon"), what percentage of brand mentions go to each company?")
+        st.caption("Of all responses to Non‑Branded queries (generic, no 'Falcon'), what percentage of brand mentions go to each company?")
 
 
 
