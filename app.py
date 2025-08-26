@@ -724,7 +724,7 @@ with tab3:
     selected_competitors = st.multiselect(
         "Select Competitors to Compare:",
         ["Falcon"] + COMPETITORS,
-        default=["Falcon Structures", "ROXBOX", "Mobile Modular", "WillScot"]
+        default=["Falcon", "ROXBOX", "Mobile Modular", "WillScot"]
     )
     
     # Side-by-side comparison queries
