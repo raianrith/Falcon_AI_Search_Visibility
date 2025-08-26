@@ -7,12 +7,11 @@ import time
 import os
 import nltk
 import matplotlib.pyplot as plt
-
-
-
-
-
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import asyncio
+import aiohttp
+from concurrent.futures import ThreadPoolExecutor
+import threading
 
 
 nltk.download('vader_lexicon')
@@ -85,7 +84,7 @@ st.markdown("""
 <div style='text-align:center; padding:1rem 0;'>
   <img src='https://github.com/raianrith/AI-Client-Research-Tool/blob/main/Weidert_Logo_primary-logomark-antique.png?raw=true' width='60'/>
   <h1>Falcon AI‑Powered LLM Search Visibility Tool</h1>
-  <h4 style='color:#ccc;'>Created by Weidert Group, Inc.</h4>
+  <h4 style='color:#ccc;'>Created by Weidert Group, Inc.</h4>
 </div>
 """, unsafe_allow_html=True)
 
@@ -111,7 +110,7 @@ genai.configure(api_key=gemini_key)
 gemini_model = genai.GenerativeModel(gemini_model_name)
 perplexity_client = OpenAI(api_key=perp_key, base_url="https://api.perplexity.ai")
 
-SYSTEM_PROMPT = "Provide a helpful answer to the user’s query."
+SYSTEM_PROMPT = "Provide a helpful answer to the user's query."
 
 
 def get_openai_response(q):
@@ -147,6 +146,36 @@ def get_perplexity_response(q):
         return "ERROR"
 
 
+# ─── PARALLEL PROCESSING FUNCTIONS ─────────────────────────────────────────────
+
+def get_response_with_source(source_func_tuple):
+    """Helper function to get response with source info"""
+    source, func, query = source_func_tuple
+    try:
+        response = func(query)
+        return {"Query": query, "Source": source, "Response": response}
+    except Exception as e:
+        return {"Query": query, "Source": source, "Response": f"ERROR: {e}"}
+
+def process_queries_parallel(queries):
+    """Process all queries across all sources in parallel"""
+    all_tasks = []
+    
+    # Create all combinations of queries and sources
+    for q in queries:
+        all_tasks.extend([
+            ("OpenAI", get_openai_response, q),
+            ("Gemini", get_gemini_response, q),
+            ("Perplexity", get_perplexity_response, q)
+        ])
+    
+    # Use ThreadPoolExecutor for parallel processing
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        results = list(executor.map(get_response_with_source, all_tasks))
+    
+    return results
+
+
 # ─── TABS ──────────────────────────────────────────────────────────────────────
 
 tab1, tab2, tab3 = st.tabs(["Multi-LLM Response Generator", "Search Visibility Analysis", "Time Series Analysis"])
@@ -174,17 +203,12 @@ with tab1:
         if not qs:
             st.warning("Please enter at least one query.")
         else:
-            results = []
-            with st.spinner("Gathering responses…"):
-                for q in qs:
-                    for source, fn in [
-                        ("OpenAI", get_openai_response),
-                        ("Gemini", get_gemini_response),
-                        ("Perplexity", get_perplexity_response)
-                    ]:
-                        txt = fn(q)
-                        results.append({"Query": q, "Source": source, "Response": txt})
-                        time.sleep(1)
+            with st.spinner("Gathering responses in parallel…"):
+                start_time = time.time()
+                results = process_queries_parallel(qs)
+                end_time = time.time()
+                
+                st.success(f"✅ Completed {len(results)} API calls in {end_time - start_time:.1f} seconds!")
 
             df = pd.DataFrame(results)[["Query","Source","Response"]]
             st.dataframe(df, use_container_width=True)
@@ -303,7 +327,7 @@ with tab2:
         # Citation rate chart
         cit_rate = df_main.groupby("Source")["Falcon URL Cited"].mean().mul(100).round(1)
         st.subheader("🔗 Falcon URL Citation Rate")
-        st.caption("Shows how often each source included a link to Falcon’s website in their response.")
+        st.caption("Shows how often each source included a link to Falcon's website in their response.")
 
 
         st.bar_chart(cit_rate)
@@ -374,7 +398,7 @@ with tab2:
 
 
         st.subheader("🏷️ Brand Share — Non‑Branded Queries")
-        st.caption("Of all responses to Non‑Branded queries (generic, no “Falcon”), what percentage of brand mentions go to each company?")
+        st.caption("Of all responses to Non‑Branded queries (generic, no "Falcon"), what percentage of brand mentions go to each company?")
 
 
 
