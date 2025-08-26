@@ -8,10 +8,7 @@ import os
 import nltk
 import matplotlib.pyplot as plt
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
-import asyncio
-import aiohttp
 from concurrent.futures import ThreadPoolExecutor
-import threading
 
 
 nltk.download('vader_lexicon')
