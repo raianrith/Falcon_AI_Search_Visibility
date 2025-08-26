@@ -28,11 +28,26 @@ import google.generativeai as genai
 # ──────────────────────────────────────────────────────────────────────────────
 
 def load_yaml_config(uploaded_file=None, default_path=None):
-    """Load YAML config from uploaded file or a default path/env var."""
+    """Load YAML config from uploaded file or a default path/env var. Always returns a dict."""
     try:
         import yaml
     except ImportError:
         st.error("Missing dependency: pyyaml. Add it to requirements.txt")
+        return {}
+
+    try:
+        if uploaded_file is not None:
+            data = yaml.safe_load(uploaded_file.getvalue())
+            return data or {}
+        path = default_path or os.getenv("CLIENT_CONFIG_PATH", "client.config.yaml")
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                data = yaml.safe_load(f)
+                return data or {}
+        st.warning(f"Config not found at {path}; using baked-in defaults.")
+        return {}
+    except Exception as e:
+        st.error(f"Error loading config: {e}")
         return {}
 
     if uploaded_file is not None:
@@ -75,7 +90,7 @@ st.set_page_config(
 # ──────────────────────────────────────────────────────────────────────────────
 st.sidebar.title("🧭 Client Configuration")
 config_upload = st.sidebar.file_uploader("Upload client.config.yaml (optional)", type=["yaml", "yml"]) 
-cfg = load_yaml_config(config_upload)
+cfg = load_yaml_config(config_upload) or {}
 
 # Safe defaults if keys missing
 palette = cfg.get("palette", {})
