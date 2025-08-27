@@ -132,30 +132,6 @@ div.stButton > button {
 </style>
 """, unsafe_allow_html=True)
 
-# ─── PREDEFINED QUERIES ─────────────────────────────────────────────────────────
-PREDEFINED_QUERIES = [
-    "Who are the leading U.S. manufacturers of modified shipping-container buildings for industrial sites? -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "What companies supply turnkey container workforce housing for energy projects? -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "Best insulation solutions for container offices in sub-arctic climates -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "Typical deployment timeline and installed cost per square foot for modular container offices (2025 data) -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "Key permitting steps for shipping container buildings -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "Energy-efficiency comparison: insulated container office vs. temporary mobile trailer -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "What OSHA considerations apply to container-based modular restrooms on construction sites? -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "Options for containerized network equipment shelters with integrated HVAC and power -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "Benefits of combining office and storage in one 40-ft 'work-and-store' container unit -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "Which manufacturers offer IBC-compliant stackable container structures in North America? -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "How can container structures achieve NFPA 101 egress and fire-rating standards? -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "How does combining office and storage in a work-and-store unit improve job-site logistics compared with using separate trailers? -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "Five-year total cost-of-ownership factors when choosing shipping container buildings vs. stick-built offices -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "Does a standard shipping container office door width satisfy ADA requirements, and how can it be modified? -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "How do insulated container offices from Falcon compare with Mobile Modular trailer offices on energy performance in Alaska winters? -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "How do Falcon container living quarters compare with WillScot dorm modules for NFPA 101 life-safety and crew comfort in seismic Zone 4 regions? -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "How do storage containers from Falcon and Conexwest differ in ASTM B117 salt-spray endurance for long-term coastal deployments? -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "What roof-coating options do Falcon and Roxbox recommend for container offices in high-UV desert climates, and how does each impact 10-year ROI? -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "Which theft-deterrent lockbox designs from Falcon, Wilmot, and Conexwest most effectively secure job-site storage containers against break-ins? -- Provide sources where you are extracting information from in this format - 'https?://\\S+'",
-    "How do Falcon container restroom modules compare with Triumph Modular units on LEED v4 water-conservation performance and freeze-protection reliability at −40 °F"
-]
-
 # ─── QUERY TEMPLATES ─────────────────────────────────────────────────────────
 QUERY_TEMPLATES = {
     "Product Discovery": [
@@ -198,7 +174,7 @@ QUERY_TEMPLATES = {
 # ─── COMPETITOR ANALYSIS SETUP ─────────────────────────────────────────────
 COMPETITORS = [
     "ROXBOX", "Wilmot", "Pac-Van", "BMarko", "Giant", 
-    "XCaliber", "Conexwest", "Mobile Modular", "WillScot", "Triumph Modular"
+    "XCaliber", "Conexwest", "Mobile Modular", "WillScot"
 ]
 
 # ─── LOGO & HEADER ─────────────────────────────────────────────────────────────
@@ -494,11 +470,12 @@ def generate_prompt_suggestions(base_query):
     return suggestions
 
 # ─── MAIN APPLICATION TABS ─────────────────────────────────────────────────
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "Multi-LLM Response Generator", 
     "Search Visibility Analysis", 
     "Competitor Comparison", 
-    "Executive Dashboard & Time Series"
+    "Executive Dashboard",
+    "Time Series Analysis"
 ])
 
 # ─── TAB 1: ENHANCED MULTI-LLM GENERATOR ─────────────────────────────────────
@@ -509,21 +486,6 @@ with tab1:
         '</h5>',
         unsafe_allow_html=True
     )
-    
-    # Predefined Query Set Section
-    with st.expander("🎯 Predefined Query Set (20 Queries)", expanded=False):
-        st.markdown("**Run the complete set of 20 predefined queries with one click:**")
-        st.caption("This comprehensive query set covers key industry topics and competitive comparisons")
-        
-        # Display queries in a scrollable container
-        query_display = st.container()
-        with query_display:
-            for i, query in enumerate(PREDEFINED_QUERIES, 1):
-                st.text(f"{i}. {query[:100]}..." if len(query) > 100 else f"{i}. {query}")
-        
-        if st.button("🚀 Run All 20 Predefined Queries", key="run_predefined", type="primary"):
-            st.session_state.use_predefined = True
-            st.session_state.run_triggered = True
     
     # Query Templates Section
     with st.expander("📋 Query Templates", expanded=False):
@@ -558,10 +520,21 @@ with tab1:
                     st.markdown(f"• {prompt}")
                 st.markdown("")
     
+    # Example queries for first-time users
+    if 'first_visit' not in st.session_state:
+        st.session_state.first_visit = True
+        example_queries = [
+            "What companies provide modular container offices in the US?",
+            "Best portable office solutions for construction sites",
+            "Compare modular office rental vs purchase options"
+        ]
+        st.info(f"💡 **First time here?** Try these example queries:\n\n" + 
+                "\n".join([f"• {q}" for q in example_queries]))
+    
     # Main query input
     initial_value = st.session_state.get('template_query', '')
     queries_input = st.text_area(
-        "Custom Queries (one per line)",
+        "Queries (one per line)",
         value=initial_value,
         height=200,
         placeholder="e.g. What companies provide modular container offices in the US?\nBest portable office solutions for construction sites"
@@ -571,12 +544,11 @@ with tab1:
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col1:
-        if st.button("🔍 Run Custom Queries", key="run_analysis", type="primary"):
-            st.session_state.use_predefined = False
+        if st.button("🔍 Run Analysis", key="run_analysis", type="primary"):
             st.session_state.run_triggered = True
     
     with col2:
-        if enable_pause_resume and st.session_state.batch_state.get('is_running', False):
+        if enable_pause_resume and st.session_state.batch_state['is_running']:
             if st.session_state.batch_state['is_paused']:
                 if st.button("▶️ Resume", key="resume"):
                     batch_processor.resume_processing()
@@ -585,22 +557,17 @@ with tab1:
                     batch_processor.pause_processing()
     
     with col3:
-        if st.session_state.batch_state.get('is_running', False):
+        if st.session_state.batch_state['is_running']:
             if st.button("⏹️ Stop", key="stop"):
                 batch_processor.stop_processing()
 
     # Process queries
     if st.session_state.get('run_triggered', False):
-        # Determine which queries to use
-        if st.session_state.get('use_predefined', False):
-            qs = PREDEFINED_QUERIES
-        else:
-            qs = [q.strip() for q in queries_input.splitlines() if q.strip()]
-        
+        qs = [q.strip() for q in queries_input.splitlines() if q.strip()]
         if not qs:
-            st.warning("Please enter at least one query or use predefined queries.")
+            st.warning("Please enter at least one query.")
         else:
-            with st.spinner(f"Gathering responses for {len(qs)} queries with enhanced analytics..."):
+            with st.spinner("Gathering responses with enhanced analytics..."):
                 start_time = time.time()
                 results = process_queries_parallel(qs)
                 end_time = time.time()
@@ -609,9 +576,6 @@ with tab1:
 
             # Enhanced results processing
             df = pd.DataFrame(results)
-            
-            # Add Date column
-            df['Date'] = datetime.now().date()
             
             # Add enhanced analytics
             df['Falcon_Position'], df['Falcon_Sentence_Num'], df['Falcon_Position_Pct'] = zip(*df['Response'].apply(lambda x: analyze_position(x, "Falcon")))
@@ -622,24 +586,14 @@ with tab1:
             df['Competitors_Found'] = [comp[0] for comp in competitor_data]
             df['Competitor_Positions'] = [comp[1] for comp in competitor_data]
             
-            # Add additional columns for analysis
-            df['Branded_Query'] = df['Query'].str.contains('falcon', case=False, na=False)
-            df['Falcon_Mentioned'] = df['Response'].str.contains('falcon', case=False, na=False)
-            df['Sources_Cited'] = df['Response'].str.findall(r'(https?://\S+)').apply(lambda lst: ', '.join(lst) if lst else '')
-            df['Falcon_URL_Cited'] = df['Sources_Cited'].str.contains('falconstructures.com', case=False, na=False)
-            
-            # Store in session state for other tabs
-            st.session_state.latest_results = df
-            
             # Display enhanced results
             st.subheader("📊 Enhanced Analysis Results")
-            st.caption("Summary metrics showing overall performance across all queries and sources")
             
             # Summary metrics
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
-                falcon_mention_rate = (df['Falcon_Mentioned'].sum() / len(df) * 100)
+                falcon_mention_rate = (df['Response'].str.contains('falcon', case=False, na=False).sum() / len(df) * 100)
                 st.metric("Falcon Mention Rate", f"{falcon_mention_rate:.1f}%")
             
             with col2:
@@ -655,18 +609,15 @@ with tab1:
                 st.metric("Positive Context", f"{positive_context_rate:.1f}%")
             
             # Detailed results table
-            st.subheader("📋 Detailed Results")
-            st.caption("Complete dataset with all responses and analytical metrics")
             display_df = df[['Query', 'Source', 'Response', 'Response_Time', 'Falcon_Position', 'Context_Type', 'Competitors_Found']].copy()
             st.dataframe(display_df, use_container_width=True, height=400)
             
             # Download enhanced results
             st.download_button(
-                "📥 Download Enhanced Results (CSV)",
+                "📥 Download Enhanced Results",
                 df.to_csv(index=False),
                 "enhanced_responses.csv",
-                "text/csv",
-                help="Download the complete dataset with all analytics"
+                "text/csv"
             )
             
         st.session_state.run_triggered = False
@@ -676,202 +627,31 @@ with tab2:
     st.markdown("### 🔍 Enhanced Search Visibility Analysis")
     
     uploaded = st.file_uploader("Upload your results CSV", type="csv", key="visibility_upload")
-    
-    # Initialize df_main
-    df_main = None
-    
-    # Check if we have results from Tab 1
-    if 'latest_results' in st.session_state:
-        use_latest = st.checkbox("Use results from Multi-LLM Response Generator", value=True)
-        if use_latest:
-            df_main = st.session_state.latest_results.copy()
-    elif uploaded:
+
+    if uploaded:
         df_main = pd.read_csv(uploaded)
-    
-    if df_main is not None:
+        
         # Enhanced data processing
         pattern = re.compile(r'\b(' + '|'.join(re.escape(c) for c in COMPETITORS) + r')\b', flags=re.IGNORECASE)
         
-        # Ensure all necessary columns exist
-        if 'Date' not in df_main.columns:
-            df_main['Date'] = pd.to_datetime(datetime.today().date())
-        else:
-            df_main['Date'] = pd.to_datetime(df_main['Date'])
+        # Add enhanced analytics columns
+        df_main['Date'] = pd.to_datetime(df_main.get('Date', datetime.today().date()))
+        df_main['Falcon_Position'], df_main['Falcon_Sentence_Num'], df_main['Falcon_Position_Pct'] = zip(*df_main['Response'].apply(lambda x: analyze_position(x, "Falcon")))
+        df_main['Context_Type'], df_main['Context_Sentiment'], df_main['Context_Details'] = zip(*df_main['Response'].apply(lambda x: analyze_context(x, "Falcon")))
         
-        if 'Falcon_Position' not in df_main.columns:
-            df_main['Falcon_Position'], df_main['Falcon_Sentence_Num'], df_main['Falcon_Position_Pct'] = zip(*df_main['Response'].apply(lambda x: analyze_position(x, "Falcon")))
+        competitor_data = df_main['Response'].apply(extract_competitors_detailed)
+        df_main['Competitors_Found'] = [', '.join(comp[0]) for comp in competitor_data]
+        df_main['Competitor_Positions'] = [comp[1] for comp in competitor_data]
         
-        if 'Context_Type' not in df_main.columns:
-            df_main['Context_Type'], df_main['Context_Sentiment'], df_main['Context_Details'] = zip(*df_main['Response'].apply(lambda x: analyze_context(x, "Falcon")))
-        
-        if 'Competitors_Found' not in df_main.columns:
-            competitor_data = df_main['Response'].apply(extract_competitors_detailed)
-            df_main['Competitors_Found'] = [', '.join(comp[0]) if comp[0] else '' for comp in competitor_data]
-            df_main['Competitor_Positions'] = [comp[1] for comp in competitor_data]
-        
-        # Ensure other columns exist
+        # Original columns
         df_main['Branded_Query'] = df_main['Query'].str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
         df_main['Falcon_Mentioned'] = df_main['Response'].str.contains('falcon', case=False, na=False).map({True: 'Y', False: 'N'})
-        
-        if 'Sources_Cited' not in df_main.columns:
-            df_main['Sources_Cited'] = df_main['Response'].str.findall(r'(https?://\S+)').apply(lambda lst: ', '.join(lst) if lst else '')
-        
-        df_main['Falcon_URL_Cited'] = df_main['Sources_Cited'].str.contains('falconstructures.com', case=False, na=False)
+        df_main['Sources_Cited'] = df_main['Response'].str.findall(r'(https?://\S+)').apply(lambda lst: ', '.join(lst) if lst else '')
         df_main['Response_Word_Count'] = df_main['Response'].astype(str).str.split().str.len()
         df_main['Query_Number'] = pd.factorize(df_main['Query'])[0] + 1
         
-        # Traditional Mention Rates
-        st.subheader("📊 Traditional Mention Rates")
-        st.caption("Overall percentage of responses mentioning Falcon by each LLM source")
-        overall_rate = df_main.groupby('Source')['Falcon_Mentioned'].apply(lambda x: (x == 'Y').mean() * 100).round(1)
-        
-        cols = st.columns(len(overall_rate))
-        for col, src in zip(cols, overall_rate.index):
-            col.metric(f"{src} Mentions Falcon", f"{overall_rate[src]}%")
-        
-        st.divider()
-        
-        # NEW ANALYSIS 1: Branded vs Non-Branded Breakdown
-        st.subheader("🎯 Branded vs. Non-Branded Query Performance")
-        st.caption("Comparison of Falcon mention rates between queries that include 'Falcon' (branded) and those that don't (non-branded)")
-        
-        branded_analysis = df_main.groupby(['Source', 'Branded_Query'])['Falcon_Mentioned'].apply(
-            lambda x: (x == 'Y').mean() * 100
-        ).unstack(fill_value=0).round(1)
-        
-        # Rename columns for clarity
-        branded_analysis.columns = ['Non-Branded Queries', 'Branded Queries']
-        
-        fig = px.bar(branded_analysis.T, title="Falcon Mention Rate: Branded vs Non-Branded Queries",
-                    labels={'value': 'Mention Rate (%)', 'index': 'Query Type'},
-                    barmode='group')
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Display table
-        st.dataframe(branded_analysis.style.format("{:.1f}%"), use_container_width=True)
-        
-        st.divider()
-        
-        # NEW ANALYSIS 2: URL Citation Rate
-        st.subheader("🔗 Falcon URL Citation Rate")
-        st.caption("How often each LLM includes a link to falconstructures.com in their responses")
-        
-        url_citation_rate = df_main.groupby('Source')['Falcon_URL_Cited'].apply(
-            lambda x: (x == True).mean() * 100
-        ).round(1)
-        
-        fig = px.bar(x=url_citation_rate.index, y=url_citation_rate.values,
-                    title="Falcon Website Citation Rate by Source",
-                    labels={'x': 'Source', 'y': 'Citation Rate (%)'},
-                    color=url_citation_rate.values,
-                    color_continuous_scale='blues')
-        st.plotly_chart(fig, use_container_width=True)
-        
-        st.divider()
-        
-        # NEW ANALYSIS 3: Competitor Mentions Without Falcon
-        st.subheader("⚠️ Competitor-Only Mentions")
-        st.caption("Cases where competitors are mentioned but Falcon is not - these represent missed opportunities")
-        
-        # Find responses where competitors are mentioned but Falcon is not
-        df_main['Has_Competitors'] = df_main['Competitors_Found'].apply(lambda x: len(x) > 0 if isinstance(x, list) else len(str(x)) > 0)
-        competitor_only = df_main[(df_main['Has_Competitors']) & (df_main['Falcon_Mentioned'] == 'N')]
-        
-        if len(competitor_only) > 0:
-            # Count by source
-            competitor_only_by_source = competitor_only.groupby('Source').size()
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                fig = px.pie(values=competitor_only_by_source.values, 
-                           names=competitor_only_by_source.index,
-                           title="Distribution of Competitor-Only Mentions by Source")
-                st.plotly_chart(fig, use_container_width=True)
-            
-            with col2:
-                # Show which competitors appear most when Falcon doesn't
-                all_competitors = []
-                for comp_list in competitor_only['Competitors_Found']:
-                    if isinstance(comp_list, list):
-                        all_competitors.extend(comp_list)
-                    elif isinstance(comp_list, str) and comp_list:
-                        all_competitors.extend(comp_list.split(', '))
-                
-                if all_competitors:
-                    comp_counts = pd.Series(all_competitors).value_counts().head(5)
-                    fig = px.bar(x=comp_counts.values, y=comp_counts.index, orientation='h',
-                               title="Top Competitors Mentioned When Falcon Isn't",
-                               labels={'x': 'Number of Mentions', 'y': 'Competitor'})
-                    st.plotly_chart(fig, use_container_width=True)
-            
-            # Show example queries
-            st.markdown("**Example Queries Where Competitors Were Mentioned But Not Falcon:**")
-            for i, query in enumerate(competitor_only['Query'].unique()[:5], 1):
-                st.markdown(f"{i}. {query}")
-        else:
-            st.info("Good news! No cases found where competitors were mentioned without Falcon.")
-        
-        st.divider()
-        
-        # NEW ANALYSIS 4: Brand Share in Non-Branded Queries
-        st.subheader("📈 Brand Share in Non-Branded Queries")
-        st.caption("Among non-branded (generic) queries, what percentage of brand mentions go to each company")
-        
-        non_branded_df = df_main[df_main['Branded_Query'] == 'N'].copy()
-        
-        if len(non_branded_df) > 0:
-            # Count mentions for each brand
-            brand_mentions = {'Falcon': (non_branded_df['Falcon_Mentioned'] == 'Y').sum()}
-            
-            for competitor in COMPETITORS:
-                brand_mentions[competitor] = non_branded_df['Response'].str.contains(
-                    competitor, case=False, na=False
-                ).sum()
-            
-            # Convert to percentages
-            total_responses = len(non_branded_df)
-            brand_share = {k: (v/total_responses * 100) for k, v in brand_mentions.items()}
-            brand_share_df = pd.DataFrame(list(brand_share.items()), columns=['Brand', 'Share %'])
-            brand_share_df = brand_share_df.sort_values('Share %', ascending=False)
-            
-            # Visualization
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                fig = px.bar(brand_share_df.head(10), x='Brand', y='Share %',
-                           title="Brand Mention Share in Non-Branded Queries",
-                           color='Share %', color_continuous_scale='RdYlGn')
-                st.plotly_chart(fig, use_container_width=True)
-            
-            with col2:
-                # Show by source
-                source_brand_share = []
-                for source in non_branded_df['Source'].unique():
-                    source_df = non_branded_df[non_branded_df['Source'] == source]
-                    falcon_share = (source_df['Falcon_Mentioned'] == 'Y').mean() * 100
-                    source_brand_share.append({
-                        'Source': source,
-                        'Falcon Share %': falcon_share
-                    })
-                
-                source_share_df = pd.DataFrame(source_brand_share)
-                fig = px.bar(source_share_df, x='Source', y='Falcon Share %',
-                           title="Falcon's Share by LLM Source (Non-Branded Queries)",
-                           color='Falcon Share %', color_continuous_scale='blues')
-                st.plotly_chart(fig, use_container_width=True)
-            
-            # Detailed table
-            st.markdown("**Detailed Brand Mention Rates in Non-Branded Queries:**")
-            st.dataframe(brand_share_df.style.format({'Share %': '{:.1f}%'}), use_container_width=True)
-        else:
-            st.info("No non-branded queries found in the dataset.")
-        
-        st.divider()
-        
-        # Position Analysis (Original)
+        # Position Analysis
         st.subheader("📍 Position Analysis")
-        st.caption("Where in the response Falcon appears - earlier mentions indicate stronger brand association")
         
         col1, col2 = st.columns(2)
         
@@ -888,9 +668,8 @@ with tab2:
                         barmode='stack')
             st.plotly_chart(fig, use_container_width=True)
         
-        # Context Analysis (Original)
+        # Context Analysis
         st.subheader("💭 Context Analysis")
-        st.caption("Sentiment and context of Falcon mentions - positive context indicates favorable brand perception")
         
         col1, col2 = st.columns(2)
         
@@ -899,7 +678,7 @@ with tab2:
             fig = px.bar(x=context_counts.index, y=context_counts.values, 
                         title="Context Type Distribution",
                         color=context_counts.index,
-                        color_discrete_map={'Positive': 'green', 'Neutral': 'blue', 'Negative': 'red', 'Not Mentioned': 'gray'})
+                        color_discrete_map={'Positive': 'green', 'Neutral': 'blue', 'Negative': 'red'})
             st.plotly_chart(fig, use_container_width=True)
         
         with col2:
@@ -911,11 +690,10 @@ with tab2:
         
         # Enhanced cleaned dataset
         st.subheader("🧹 Enhanced Dataset")
-        st.caption("Complete processed dataset with all analytical columns for further analysis")
         enhanced_columns = [
             "Date", "Query_Number", "Query", "Source", "Response", "Response_Word_Count",
             "Branded_Query", "Falcon_Mentioned", "Falcon_Position", "Context_Type", 
-            "Context_Sentiment", "Competitors_Found", "Falcon_URL_Cited", "Sources_Cited"
+            "Context_Sentiment", "Competitors_Found", "Sources_Cited"
         ]
         
         display_df = df_main[enhanced_columns]
@@ -927,30 +705,43 @@ with tab2:
             "enhanced_visibility_analysis.csv",
             "text/csv"
         )
+        
+        # Rest of the original analysis...
+        st.divider()
+        
+        st.subheader("📊 Traditional Mention Rates")
+        overall_rate = df_main.groupby('Source')['Falcon_Mentioned'].apply(lambda x: (x == 'Y').mean() * 100).round(1)
+        
+        cols = st.columns(len(overall_rate))
+        for col, src in zip(cols, overall_rate.index):
+            col.metric(f"{src} Mentions Falcon", f"{overall_rate[src]}%")
 
 # ─── TAB 3: COMPETITOR COMPARISON ─────────────────────────────────────────────
 with tab3:
     st.markdown("### 🏆 Competitor Comparison Mode")
     
-    # Option to use data from Tab 1 or upload new data
-    data_source = st.radio(
-        "Choose data source:",
-        ["Run new queries", "Use results from Multi-LLM Generator", "Upload CSV file"]
+    # Competitor selection
+    selected_competitors = st.multiselect(
+        "Select Competitors to Compare:",
+        ["Falcon"] + COMPETITORS,
+        default=["Falcon", "ROXBOX", "Mobile Modular", "WillScot"]
     )
     
-    if data_source == "Use results from Multi-LLM Generator":
-        if 'latest_results' in st.session_state:
-            st.success("Using results from Multi-LLM Response Generator")
-            df_comp = st.session_state.latest_results.copy()
+    # Side-by-side comparison queries
+    comparison_queries = st.text_area(
+        "Comparison Queries (one per line):",
+        height=150,
+        placeholder="Compare modular office companies\nBest portable building solutions\nModular office rental vs purchase"
+    )
+    
+    if st.button("🔍 Run Competitor Analysis", key="competitor_analysis"):
+        if comparison_queries.strip():
+            queries = [q.strip() for q in comparison_queries.splitlines() if q.strip()]
             
-            # Run the competitor analysis
-            selected_competitors = st.multiselect(
-                "Select Competitors to Analyze:",
-                ["Falcon"] + COMPETITORS,
-                default=["Falcon", "ROXBOX", "Mobile Modular", "WillScot"]
-            )
-            
-            if st.button("🔍 Analyze Competitors", key="analyze_existing"):
+            with st.spinner("Running competitor comparison analysis..."):
+                results = process_queries_parallel(queries)
+                df_comp = pd.DataFrame(results)
+                
                 # Analyze mentions for each selected competitor
                 competitor_analysis = {}
                 
@@ -968,7 +759,6 @@ with tab3:
                 
                 # Display comparison matrix
                 st.subheader("🏆 Competitor Performance Matrix")
-                st.caption("Comprehensive comparison of brand performance metrics across all selected competitors")
                 
                 comparison_df = pd.DataFrame(competitor_analysis).T.round(1)
                 comparison_df.columns = ['Mention Rate (%)', 'Avg Position', 'Positive Context (%)', 'First Third (%)']
@@ -990,12 +780,7 @@ with tab3:
                     mention_rates = [competitor_analysis[comp]['mention_rate'] for comp in selected_competitors]
                     fig = px.bar(x=selected_competitors, y=mention_rates, 
                                 title="Mention Rate Comparison",
-                                labels={'x': 'Competitor', 'y': 'Mention Rate (%)'},
-                                color=mention_rates,
-                                color_continuous_scale='RdYlGn')
-                    fig.add_annotation(text="Higher is better - indicates stronger brand visibility",
-                                     xref="paper", yref="paper",
-                                     x=0.5, y=-0.15, showarrow=False)
+                                labels={'x': 'Competitor', 'y': 'Mention Rate (%)'})
                     st.plotly_chart(fig, use_container_width=True)
                 
                 with col2:
@@ -1003,484 +788,704 @@ with tab3:
                     first_third_rates = [competitor_analysis[comp]['first_third_rate'] for comp in selected_competitors]
                     fig = px.bar(x=selected_competitors, y=first_third_rates, 
                                 title="First Third Position Rate",
-                                labels={'x': 'Competitor', 'y': 'First Third Rate (%)'},
-                                color=first_third_rates,
-                                color_continuous_scale='RdYlGn')
-                    fig.add_annotation(text="Higher is better - indicates prominent positioning",
-                                     xref="paper", yref="paper",
-                                     x=0.5, y=-0.15, showarrow=False)
+                                labels={'x': 'Competitor', 'y': 'First Third Rate (%)'})
                     st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.warning("No results available from Multi-LLM Generator. Please run some queries first.")
-    
-    elif data_source == "Upload CSV file":
-        uploaded_comp = st.file_uploader("Upload your CSV file", type="csv", key="comp_upload")
-        if uploaded_comp:
-            df_comp = pd.read_csv(uploaded_comp)
-            # Continue with same analysis logic as above
-            st.info("File uploaded. Select competitors and click 'Analyze Competitors' to proceed.")
-    
-    else:  # Run new queries
-        # Option to use predefined queries
-        use_predefined = st.checkbox("Use predefined 20 queries", value=False)
-        
-        if use_predefined:
-            comparison_queries = "\n".join(PREDEFINED_QUERIES)
-            st.text_area(
-                "Queries to run:",
-                value=comparison_queries,
-                height=200,
-                disabled=True
-            )
-        else:
-            # Competitor selection
-            selected_competitors = st.multiselect(
-                "Select Competitors to Compare:",
-                ["Falcon"] + COMPETITORS,
-                default=["Falcon", "ROXBOX", "Mobile Modular", "WillScot"]
-            )
-            
-            # Side-by-side comparison queries
-            comparison_queries = st.text_area(
-                "Comparison Queries (one per line):",
-                height=150,
-                placeholder="Compare modular office companies\nBest portable building solutions\nModular office rental vs purchase"
-            )
-        
-        if st.button("🔍 Run Competitor Analysis", key="competitor_analysis"):
-            if use_predefined or comparison_queries.strip():
-                queries = PREDEFINED_QUERIES if use_predefined else [q.strip() for q in comparison_queries.splitlines() if q.strip()]
                 
-                with st.spinner("Running competitor comparison analysis..."):
-                    results = process_queries_parallel(queries)
-                    df_comp = pd.DataFrame(results)
-                    
-                    if use_predefined:
-                        selected_competitors = ["Falcon"] + COMPETITORS[:4]  # Default selection for predefined
-                    
-                    # Analyze mentions for each selected competitor
-                    competitor_analysis = {}
-                    
-                    for competitor in selected_competitors:
-                        mentions = df_comp['Response'].str.contains(competitor, case=False, na=False)
-                        positions = df_comp['Response'].apply(lambda x: analyze_position(x, competitor))
-                        contexts = df_comp['Response'].apply(lambda x: analyze_context(x, competitor))
+                # Side-by-side response comparison
+                st.subheader("📄 Side-by-Side Response Analysis")
+                
+                for i, query in enumerate(queries):
+                    with st.expander(f"Query {i+1}: {query}", expanded=False):
+                        query_responses = df_comp[df_comp['Query'] == query]
                         
-                        competitor_analysis[competitor] = {
-                            'mention_rate': (mentions.sum() / len(df_comp) * 100),
-                            'avg_position': sum([p[1] for p in positions if p[1] > 0]) / max(sum([1 for p in positions if p[1] > 0]), 1),
-                            'positive_context': sum([1 for c in contexts if c[0] == 'Positive']) / len(df_comp) * 100,
-                            'first_third_rate': sum([1 for p in positions if p[0] == 'First Third']) / len(df_comp) * 100
-                        }
-                    
-                    # Display comparison matrix
-                    st.subheader("🏆 Competitor Performance Matrix")
-                    st.caption("Comprehensive comparison showing how each brand performs across key visibility metrics")
-                    
-                    comparison_df = pd.DataFrame(competitor_analysis).T.round(1)
-                    comparison_df.columns = ['Mention Rate (%)', 'Avg Position', 'Positive Context (%)', 'First Third (%)']
-                    
-                    # Color-code the dataframe
-                    st.dataframe(
-                        comparison_df.style.background_gradient(subset=['Mention Rate (%)'], cmap='RdYlGn')
-                                          .background_gradient(subset=['Positive Context (%)'], cmap='RdYlGn')
-                                          .background_gradient(subset=['First Third (%)'], cmap='RdYlGn')
-                                          .background_gradient(subset=['Avg Position'], cmap='RdYlGn_r'),
-                        use_container_width=True
-                    )
-                    
-                    # Visualization
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        # Mention rate comparison
-                        mention_rates = [competitor_analysis[comp]['mention_rate'] for comp in selected_competitors]
-                        fig = px.bar(x=selected_competitors, y=mention_rates, 
-                                    title="Mention Rate Comparison",
-                                    labels={'x': 'Competitor', 'y': 'Mention Rate (%)}'})
-                        st.plotly_chart(fig, use_container_width=True)
-                    
-                    with col2:
-                        # Position comparison
-                        first_third_rates = [competitor_analysis[comp]['first_third_rate'] for comp in selected_competitors]
-                        fig = px.bar(x=selected_competitors, y=first_third_rates, 
-                                    title="First Third Position Rate",
-                                    labels={'x': 'Competitor', 'y': 'First Third Rate (%)'})
-                        st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Side-by-side response comparison
-                    st.subheader("📄 Side-by-Side Response Analysis")
-                    st.caption("Detailed comparison of how each LLM responds to queries, with competitor mentions highlighted")
-                    
-                    for i, query in enumerate(queries[:5]):  # Show first 5 queries
-                        with st.expander(f"Query {i+1}: {query[:100]}..." if len(query) > 100 else f"Query {i+1}: {query}", expanded=False):
-                            query_responses = df_comp[df_comp['Query'] == query]
-                            
-                            cols = st.columns(min(len(query_responses), 3))
-                            for col, (_, response_row) in zip(cols, query_responses.iterrows()):
-                                with col:
-                                    st.markdown(f"**{response_row['Source']}**")
-                                    
-                                    # Highlight competitor mentions
-                                    response_text = response_row['Response']
-                                    for competitor in selected_competitors:
-                                        if competitor.lower() in response_text.lower():
-                                            # Simple highlighting
-                                            response_text = response_text.replace(
-                                                competitor, f"**{competitor}**"
-                                            )
-                                    
-                                    st.markdown(response_text[:500] + "..." if len(response_text) > 500 else response_text)
-                                    
-                                    # Show metrics for this response
-                                    for competitor in selected_competitors:
-                                        if competitor.lower() in response_row['Response'].lower():
-                                            pos_info = analyze_position(response_row['Response'], competitor)
-                                            context_info = analyze_context(response_row['Response'], competitor)
-                                            
-                                            color_class = "position-first" if pos_info[0] == "First Third" else \
-                                                         "position-middle" if pos_info[0] == "Middle Third" else \
-                                                         "position-last" if pos_info[0] == "Last Third" else "position-none"
-                                            
-                                            st.markdown(f"""
-                                            <span class="position-indicator {color_class}">
-                                                {competitor}: {pos_info[0]} | {context_info[0]}
-                                            </span>
-                                            """, unsafe_allow_html=True)
+                        cols = st.columns(len(query_responses))
+                        for col, (_, response_row) in zip(cols, query_responses.iterrows()):
+                            with col:
+                                st.markdown(f"**{response_row['Source']}**")
+                                
+                                # Highlight competitor mentions
+                                response_text = response_row['Response']
+                                for competitor in selected_competitors:
+                                    if competitor.lower() in response_text.lower():
+                                        # Simple highlighting (could be enhanced with HTML)
+                                        response_text = response_text.replace(
+                                            competitor, f"**{competitor}**"
+                                        )
+                                
+                                st.markdown(response_text[:500] + "..." if len(response_text) > 500 else response_text)
+                                
+                                # Show metrics for this response
+                                for competitor in selected_competitors:
+                                    if competitor.lower() in response_row['Response'].lower():
+                                        pos_info = analyze_position(response_row['Response'], competitor)
+                                        context_info = analyze_context(response_row['Response'], competitor)
+                                        
+                                        color_class = "position-first" if pos_info[0] == "First Third" else \
+                                                     "position-middle" if pos_info[0] == "Middle Third" else \
+                                                     "position-last" if pos_info[0] == "Last Third" else "position-none"
+                                        
+                                        st.markdown(f"""
+                                        <span class="position-indicator {color_class}">
+                                            {competitor}: {pos_info[0]} | {context_info[0]}
+                                        </span>
+                                        """, unsafe_allow_html=True)
 
-# ─── TAB 4: EXECUTIVE DASHBOARD WITH TIME SERIES ─────────────────────────────
+# ─── TAB 4: EXECUTIVE DASHBOARD ─────────────────────────────────────────────
 with tab4:
-    st.markdown("### 📈 Executive Dashboard & Time Series Analysis")
-    st.markdown("*Comprehensive overview of search visibility performance with temporal trends*")
+    st.markdown("### 📈 Executive Dashboard")
+    st.markdown("*Comprehensive overview of search visibility performance*")
     
-    # Create sub-tabs for dashboard and time series
-    dashboard_tab, time_series_tab = st.tabs(["Executive Dashboard", "Time Series Analysis"])
+    # File upload for dashboard
+    dashboard_file = st.file_uploader("Upload analysis results for dashboard", type="csv", key="dashboard_upload")
     
-    with dashboard_tab:
-        # File upload for dashboard
-        dashboard_file = st.file_uploader("Upload analysis results for dashboard", type="csv", key="dashboard_upload")
+    if dashboard_file:
+        df_dashboard = pd.read_csv(dashboard_file)
         
-        # Initialize df_dashboard
-        df_dashboard = None
-        
-        # Check for latest results from Tab 1
-        if 'latest_results' in st.session_state:
-            use_latest_dash = st.checkbox("Use results from Multi-LLM Response Generator", value=True, key="dash_use_latest")
-            if use_latest_dash:
-                df_dashboard = st.session_state.latest_results.copy()
-        
-        # Check if file was uploaded
-        if dashboard_file and df_dashboard is None:
-            df_dashboard = pd.read_csv(dashboard_file)
-        
-        if df_dashboard is not None:
-            # Ensure we have the necessary columns
-            if 'Response' in df_dashboard.columns:
-                # Process data for dashboard
-                df_dashboard['Date'] = pd.to_datetime(df_dashboard.get('Date', datetime.today().date()))
-                df_dashboard['Falcon_Mentioned'] = df_dashboard['Response'].str.contains('falcon', case=False, na=False)
-                
-                # Fix the .str.contains error by ensuring Query is string type
-                df_dashboard['Query'] = df_dashboard['Query'].astype(str)
-                df_dashboard['Branded_Query'] = df_dashboard['Query'].str.contains('falcon', case=False, na=False)
-                
-                # Enhanced analytics for dashboard
-                position_data = df_dashboard['Response'].apply(lambda x: analyze_position(x, "Falcon"))
-                context_data = df_dashboard['Response'].apply(lambda x: analyze_context(x, "Falcon"))
-                competitor_data = df_dashboard['Response'].apply(extract_competitors_detailed)
-                
-                df_dashboard['Position_Category'] = [p[0] for p in position_data]
-                df_dashboard['Context_Type'] = [c[0] for c in context_data]
-                df_dashboard['Context_Sentiment'] = [c[1] for c in context_data]
-                df_dashboard['Competitors_Count'] = [len(c[0]) for c in competitor_data]
-                
-                # Key Performance Indicators
-                st.subheader("🎯 Key Performance Indicators")
-                st.caption("High-level metrics showing overall brand visibility and sentiment performance")
-                
-                col1, col2, col3, col4, col5 = st.columns(5)
-                
-                # Calculate KPIs
-                total_queries = len(df_dashboard)
-                falcon_mentions = df_dashboard['Falcon_Mentioned'].sum()
-                mention_rate = (falcon_mentions / total_queries * 100) if total_queries > 0 else 0
-                
-                first_position_count = sum([1 for p in position_data if p[0] == 'First Third'])
-                first_position_rate = (first_position_count / total_queries * 100) if total_queries > 0 else 0
-                
-                positive_context_count = sum([1 for c in context_data if c[0] == 'Positive'])
-                positive_context_rate = (positive_context_count / total_queries * 100) if total_queries > 0 else 0
-                
-                avg_competitors = df_dashboard['Competitors_Count'].mean()
-                
-                branded_queries = df_dashboard['Branded_Query'].sum()
-                nonbranded_mention_rate = (
-                    df_dashboard[~df_dashboard['Branded_Query']]['Falcon_Mentioned'].sum() / 
-                    len(df_dashboard[~df_dashboard['Branded_Query']]) * 100
-                ) if len(df_dashboard[~df_dashboard['Branded_Query']]) > 0 else 0
-                
-                with col1:
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-value">{mention_rate:.1f}%</div>
-                        <div class="metric-label">Overall Mention Rate</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col2:
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-value">{first_position_rate:.1f}%</div>
-                        <div class="metric-label">First Third Position</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col3:
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-value">{positive_context_rate:.1f}%</div>
-                        <div class="metric-label">Positive Context</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col4:
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-value">{nonbranded_mention_rate:.1f}%</div>
-                        <div class="metric-label">Non-Branded Mentions</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col5:
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-value">{avg_competitors:.1f}</div>
-                        <div class="metric-label">Avg Competitors/Query</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                st.divider()
-                
-                # Performance by Source
-                st.subheader("🏅 Performance by LLM Source")
-                st.caption("Detailed breakdown of how each LLM performs across key metrics")
-                
-                source_performance = df_dashboard.groupby('Source').agg({
-                    'Falcon_Mentioned': lambda x: (x.sum() / len(x) * 100),
-                    'Position_Category': lambda x: sum([1 for p in x if p == 'First Third']) / len(x) * 100,
-                    'Context_Type': lambda x: sum([1 for c in x if c == 'Positive']) / len(x) * 100,
-                    'Context_Sentiment': 'mean',
-                    'Competitors_Count': 'mean'
-                }).round(2)
-                
-                source_performance.columns = [
-                    'Mention Rate (%)', 'First Third (%)', 'Positive Context (%)', 
-                    'Avg Sentiment', 'Avg Competitors'
-                ]
-                
-                # Create a comprehensive performance chart
-                fig = make_subplots(
-                    rows=2, cols=2,
-                    subplot_titles=('Mention Rate by Source', 'Position Performance', 
-                                   'Context Analysis', 'Competitive Landscape'),
-                    specs=[[{"secondary_y": False}, {"secondary_y": False}],
-                           [{"secondary_y": False}, {"secondary_y": False}]]
-                )
-                
-                sources = source_performance.index.tolist()
-                
-                # Mention Rate
-                fig.add_trace(
-                    go.Bar(name='Mention Rate', x=sources, y=source_performance['Mention Rate (%)'],
-                          marker_color='lightblue'),
-                    row=1, col=1
-                )
-                
-                # Position Performance
-                fig.add_trace(
-                    go.Bar(name='First Third', x=sources, y=source_performance['First Third (%)'],
-                          marker_color='lightgreen'),
-                    row=1, col=2
-                )
-                
-                # Context Analysis
-                fig.add_trace(
-                    go.Bar(name='Positive Context', x=sources, y=source_performance['Positive Context (%)'],
-                          marker_color='gold'),
-                    row=2, col=1
-                )
-                
-                # Competitive Landscape
-                fig.add_trace(
-                    go.Bar(name='Avg Competitors', x=sources, y=source_performance['Avg Competitors'],
-                          marker_color='coral'),
-                    row=2, col=2
-                )
-                
-                fig.update_layout(height=600, showlegend=False, title_text="Comprehensive Performance Analysis")
-                st.plotly_chart(fig, use_container_width=True)
-                
-                # Actionable Recommendations
-                st.subheader("💡 Actionable Recommendations")
-                st.caption("AI-generated insights based on current performance metrics")
-                
-                recommendations = []
-                
-                if mention_rate < 50:
-                    recommendations.append("🔴 **Critical**: Overall mention rate is below 50%. Focus on brand visibility strategies.")
-                
-                if first_position_rate < 30:
-                    recommendations.append("🟡 **Important**: Low first-position rate. Optimize content for earlier mentions.")
-                
-                if positive_context_rate < 60:
-                    recommendations.append("🟡 **Attention**: Context sentiment needs improvement. Review brand messaging.")
-                
-                if nonbranded_mention_rate < 20:
-                    recommendations.append("🔴 **Priority**: Very low non-branded mentions. Strengthen SEO and content strategy.")
-                
-                if avg_competitors > 3:
-                    recommendations.append("🟡 **Competitive**: High competitor density. Differentiate value propositions.")
-                
-                if not recommendations:
-                    recommendations.append("🟢 **Excellent**: Performance is strong across all metrics. Continue current strategies.")
-                
-                for rec in recommendations:
-                    st.markdown(rec)
-    
-    with time_series_tab:
-        st.markdown("### 📈 Time Series Analysis")
-        st.caption("Track performance trends over time to identify patterns and measure improvement")
-        
-        # Option to use accumulated data or upload
-        ts_data_source = st.radio(
-            "Choose data source for time series:",
-            ["Upload CSV with historical data", "Use current session data"]
-        )
-        
-        if ts_data_source == "Use current session data":
-            if 'latest_results' in st.session_state:
-                df_ts = st.session_state.latest_results.copy()
-                
-                # Ensure Date column exists
-                if 'Date' not in df_ts.columns:
-                    df_ts['Date'] = pd.to_datetime(datetime.today().date())
-                else:
-                    df_ts['Date'] = pd.to_datetime(df_ts['Date'])
-                
-                # Process time series data
-                # Fix the error by ensuring proper string type
-                df_ts['Query'] = df_ts['Query'].astype(str)
-                df_ts['Response'] = df_ts['Response'].astype(str)
-                
-                df_ts['Falcon_Mentioned'] = df_ts['Response'].str.contains('falcon', case=False, na=False)
-                df_ts['Branded_Query'] = df_ts['Query'].str.contains('falcon', case=False, na=False)
-                
-                # Add enhanced analytics
-                position_data = df_ts['Response'].apply(lambda x: analyze_position(x, "Falcon"))
-                context_data = df_ts['Response'].apply(lambda x: analyze_context(x, "Falcon"))
-                competitor_data = df_ts['Response'].apply(extract_competitors_detailed)
-                
-                df_ts['Position_Category'] = [p[0] for p in position_data]
-                df_ts['Context_Type'] = [c[0] for c in context_data]
-                df_ts['Context_Sentiment'] = [c[1] for c in context_data]
-                df_ts['Competitors_Count'] = [len(c[0]) for c in competitor_data]
-                
-                # Check for Sources_Cited column
-                if 'Sources_Cited' in df_ts.columns:
-                    # Ensure Sources_Cited is string type before using .str accessor
-                    df_ts['Sources_Cited'] = df_ts['Sources_Cited'].astype(str)
-                    df_ts["Falcon_URL_Cited"] = df_ts['Sources_Cited'].str.contains("falconstructures.com", na=False, case=False)
-                else:
-                    df_ts["Falcon_URL_Cited"] = False
-                
-                # Create time series visualizations
-                st.subheader("📊 Performance Metrics")
-                st.caption("Key metrics aggregated by source showing current performance snapshot")
-                
-                # Aggregate by source (since we likely have single date)
-                source_metrics = df_ts.groupby('Source').agg({
-                    'Falcon_Mentioned': lambda x: (x.sum() / len(x) * 100),
-                    'Position_Category': lambda x: sum([1 for p in x if p == 'First Third']) / len(x) * 100,
-                    'Context_Type': lambda x: sum([1 for c in x if c == 'Positive']) / len(x) * 100,
-                    'Falcon_URL_Cited': lambda x: (x.sum() / len(x) * 100),
-                    'Competitors_Count': 'mean'
-                }).round(1)
-                
-                source_metrics.columns = [
-                    'Mention Rate (%)', 'First Position (%)', 'Positive Context (%)', 
-                    'URL Citation (%)', 'Avg Competitors'
-                ]
-                
-                # Display metrics table
-                st.dataframe(source_metrics.style.format('{:.1f}'), use_container_width=True)
-                
-                # Visualization
-                fig = px.bar(source_metrics.T, title="Performance Metrics by Source",
-                           labels={'value': 'Percentage / Count', 'index': 'Metric'})
-                fig.update_layout(height=500)
-                st.plotly_chart(fig, use_container_width=True)
-                
-                st.info("Note: Using current session data. For true time series analysis, upload a CSV with historical data spanning multiple dates.")
-            else:
-                st.warning("No data available. Please run queries in the Multi-LLM Response Generator first.")
-        
-        else:  # Upload CSV
-            ts_file = st.file_uploader("Upload CSV with time series data", type="csv", key="ts_upload")
+        # Ensure we have the necessary columns
+        if 'Response' in df_dashboard.columns:
+            # Process data for dashboard
+            df_dashboard['Date'] = pd.to_datetime(df_dashboard.get('Date', datetime.today().date()))
+            df_dashboard['Falcon_Mentioned'] = df_dashboard['Response'].str.contains('falcon', case=False, na=False)
+            df_dashboard['Branded_Query'] = df_dashboard.get('Query', '').astype(str).str.contains('falcon', case=False, na=False)
             
-            if ts_file:
-                df_ts = pd.read_csv(ts_file)
+            # Enhanced analytics for dashboard
+            position_data = df_dashboard['Response'].apply(lambda x: analyze_position(x, "Falcon"))
+            context_data = df_dashboard['Response'].apply(lambda x: analyze_context(x, "Falcon"))
+            competitor_data = df_dashboard['Response'].apply(extract_competitors_detailed)
+            
+            df_dashboard['Position_Category'] = [p[0] for p in position_data]
+            df_dashboard['Context_Type'] = [c[0] for c in context_data]
+            df_dashboard['Context_Sentiment'] = [c[1] for c in context_data]
+            df_dashboard['Competitors_Count'] = [len(c[0]) for c in competitor_data]
+            
+            # Key Performance Indicators
+            st.subheader("🎯 Key Performance Indicators")
+            
+            col1, col2, col3, col4, col5 = st.columns(5)
+            
+            # Calculate KPIs
+            total_queries = len(df_dashboard)
+            falcon_mentions = df_dashboard['Falcon_Mentioned'].sum()
+            mention_rate = (falcon_mentions / total_queries * 100) if total_queries > 0 else 0
+            
+            first_position_count = sum([1 for p in position_data if p[0] == 'First Third'])
+            first_position_rate = (first_position_count / total_queries * 100) if total_queries > 0 else 0
+            
+            positive_context_count = sum([1 for c in context_data if c[0] == 'Positive'])
+            positive_context_rate = (positive_context_count / total_queries * 100) if total_queries > 0 else 0
+            
+            avg_competitors = df_dashboard['Competitors_Count'].mean()
+            
+            branded_queries = df_dashboard['Branded_Query'].sum()
+            nonbranded_mention_rate = (
+                df_dashboard[~df_dashboard['Branded_Query']]['Falcon_Mentioned'].sum() / 
+                len(df_dashboard[~df_dashboard['Branded_Query']]) * 100
+            ) if len(df_dashboard[~df_dashboard['Branded_Query']]) > 0 else 0
+            
+            with col1:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-value">{mention_rate:.1f}%</div>
+                    <div class="metric-label">Overall Mention Rate</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-value">{first_position_rate:.1f}%</div>
+                    <div class="metric-label">First Third Position</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col3:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-value">{positive_context_rate:.1f}%</div>
+                    <div class="metric-label">Positive Context</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col4:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-value">{nonbranded_mention_rate:.1f}%</div>
+                    <div class="metric-label">Non-Branded Mentions</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col5:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-value">{avg_competitors:.1f}</div>
+                    <div class="metric-label">Avg Competitors/Query</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.divider()
+            
+            # Performance by Source
+            st.subheader("🏅 Performance by LLM Source")
+            
+            source_performance = df_dashboard.groupby('Source').agg({
+                'Falcon_Mentioned': lambda x: (x.sum() / len(x) * 100),
+                'Position_Category': lambda x: sum([1 for p in x if p == 'First Third']) / len(x) * 100,
+                'Context_Type': lambda x: sum([1 for c in x if c == 'Positive']) / len(x) * 100,
+                'Context_Sentiment': 'mean',
+                'Competitors_Count': 'mean'
+            }).round(2)
+            
+            source_performance.columns = [
+                'Mention Rate (%)', 'First Third (%)', 'Positive Context (%)', 
+                'Avg Sentiment', 'Avg Competitors'
+            ]
+            
+            # Create a comprehensive performance chart
+            fig = make_subplots(
+                rows=2, cols=2,
+                subplot_titles=('Mention Rate by Source', 'Position Performance', 
+                               'Context Analysis', 'Competitive Landscape'),
+                specs=[[{"secondary_y": False}, {"secondary_y": False}],
+                       [{"secondary_y": False}, {"secondary_y": False}]]
+            )
+            
+            sources = source_performance.index.tolist()
+            
+            # Mention Rate
+            fig.add_trace(
+                go.Bar(name='Mention Rate', x=sources, y=source_performance['Mention Rate (%)'],
+                      marker_color='lightblue'),
+                row=1, col=1
+            )
+            
+            # Position Performance
+            fig.add_trace(
+                go.Bar(name='First Third', x=sources, y=source_performance['First Third (%)'],
+                      marker_color='lightgreen'),
+                row=1, col=2
+            )
+            
+            # Context Analysis
+            fig.add_trace(
+                go.Bar(name='Positive Context', x=sources, y=source_performance['Positive Context (%)'],
+                      marker_color='gold'),
+                row=2, col=1
+            )
+            
+            # Competitive Landscape
+            fig.add_trace(
+                go.Bar(name='Avg Competitors', x=sources, y=source_performance['Avg Competitors'],
+                      marker_color='coral'),
+                row=2, col=2
+            )
+            
+            fig.update_layout(height=600, showlegend=False, title_text="Comprehensive Performance Analysis")
+            st.plotly_chart(fig, use_container_width=True)
+            
+            st.divider()
+            
+            # Trends Analysis (if we have date data)
+            if len(df_dashboard['Date'].unique()) > 1:
+                st.subheader("📊 Performance Trends")
                 
-                # Process the uploaded file
-                df_ts['Date'] = pd.to_datetime(df_ts['Date'])
-                
-                # Ensure string types to avoid errors
-                for col in ['Query', 'Response']:
-                    if col in df_ts.columns:
-                        df_ts[col] = df_ts[col].astype(str)
-                
-                df_ts['Falcon_Mentioned'] = df_ts['Response'].str.contains('falcon', case=False, na=False)
-                df_ts['Branded_Query'] = df_ts['Query'].str.contains('falcon', case=False, na=False)
-                
-                # Calculate daily metrics
-                daily_metrics = df_ts.groupby(['Date', 'Source']).agg({
+                daily_performance = df_dashboard.groupby(['Date', 'Source']).agg({
                     'Falcon_Mentioned': lambda x: (x.sum() / len(x) * 100)
                 }).reset_index()
                 
-                daily_metrics.columns = ['Date', 'Source', 'Mention_Rate']
-                
-                # Create time series chart
-                st.subheader("📈 Mention Rate Trends Over Time")
-                st.caption("Track how mention rates change over time to identify trends and patterns")
-                
-                fig = px.line(daily_metrics, x='Date', y='Mention_Rate', color='Source',
-                            title='Falcon Mention Rate Trends',
-                            labels={'Mention_Rate': 'Mention Rate (%)'},
-                            markers=True)
-                fig.update_layout(height=500)
+                fig = px.line(daily_performance, x='Date', y='Falcon_Mentioned', 
+                             color='Source', title='Mention Rate Trends Over Time')
                 st.plotly_chart(fig, use_container_width=True)
+            
+            # Opportunity Analysis
+            st.subheader("🎯 Opportunity Analysis")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("**Top Improvement Opportunities:**")
                 
-                # Period comparison
-                if len(df_ts['Date'].unique()) > 1:
-                    st.subheader("📊 Period Comparison")
-                    st.caption("Compare performance between different time periods")
+                # Find queries where Falcon wasn't mentioned but competitors were
+                opportunity_queries = df_dashboard[
+                    (~df_dashboard['Falcon_Mentioned']) & 
+                    (df_dashboard['Competitors_Count'] > 0)
+                ]['Query'].unique()
+                
+                for i, query in enumerate(opportunity_queries[:5]):
+                    st.markdown(f"{i+1}. {query}")
                     
-                    # Split data into periods
-                    mid_date = df_ts['Date'].median()
-                    first_half = df_ts[df_ts['Date'] <= mid_date]
-                    second_half = df_ts[df_ts['Date'] > mid_date]
-                    
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.markdown("**First Period**")
-                        first_rate = (first_half['Falcon_Mentioned'].sum() / len(first_half) * 100)
-                        st.metric("Mention Rate", f"{first_rate:.1f}%")
-                    
-                    with col2:
-                        st.markdown("**Second Period**")
-                        second_rate = (second_half['Falcon_Mentioned'].sum() / len(second_half) * 100)
-                        change = second_rate - first_rate
-                        st.metric("Mention Rate", f"{second_rate:.1f}%", f"{change:+.1f}%")
+            with col2:
+                st.markdown("**Performance Strengths:**")
+                
+                # Find queries where Falcon performed well
+                strong_queries = df_dashboard[
+                    (df_dashboard['Falcon_Mentioned']) & 
+                    (df_dashboard['Position_Category'] == 'First Third')
+                ]['Query'].unique()
+                
+                for i, query in enumerate(strong_queries[:5]):
+                    st.markdown(f"{i+1}. {query}")
+            
+            # Actionable Recommendations
+            st.subheader("💡 Actionable Recommendations")
+            
+            recommendations = []
+            
+            if mention_rate < 50:
+                recommendations.append("🔴 **Critical**: Overall mention rate is below 50%. Focus on brand visibility strategies.")
+            
+            if first_position_rate < 30:
+                recommendations.append("🟡 **Important**: Low first-position rate. Optimize content for earlier mentions.")
+            
+            if positive_context_rate < 60:
+                recommendations.append("🟡 **Attention**: Context sentiment needs improvement. Review brand messaging.")
+            
+            if nonbranded_mention_rate < 20:
+                recommendations.append("🔴 **Priority**: Very low non-branded mentions. Strengthen SEO and content strategy.")
+            
+            if avg_competitors > 3:
+                recommendations.append("🟡 **Competitive**: High competitor density. Differentiate value propositions.")
+            
+            if not recommendations:
+                recommendations.append("🟢 **Excellent**: Performance is strong across all metrics. Continue current strategies.")
+            
+            for rec in recommendations:
+                st.markdown(rec)
+            
+            # Export dashboard summary
+            st.divider()
+            
+            dashboard_summary = {
+                'Date': [datetime.now().date()],
+                'Total_Queries': [total_queries],
+                'Mention_Rate': [mention_rate],
+                'First_Position_Rate': [first_position_rate],
+                'Positive_Context_Rate': [positive_context_rate],
+                'NonBranded_Mention_Rate': [nonbranded_mention_rate],
+                'Avg_Competitors': [avg_competitors],
+                'Top_Opportunity': [opportunity_queries[0] if len(opportunity_queries) > 0 else 'None'],
+                'Performance_Grade': ['A' if mention_rate > 70 else 'B' if mention_rate > 50 else 'C' if mention_rate > 30 else 'D']
+            }
+            
+            summary_df = pd.DataFrame(dashboard_summary)
+            
+            st.download_button(
+                "📊 Download Executive Summary",
+                summary_df.to_csv(index=False),
+                f"executive_summary_{datetime.now().strftime('%Y%m%d')}.csv",
+                "text/csv"
+            )
+
+# ─── TAB 5: ENHANCED TIME SERIES ANALYSIS ─────────────────────────────────────
+with tab5:
+    st.markdown("### 📈 Time Series Analysis")
+    st.caption("Track changes in key search visibility metrics over time with enhanced analytics.")
+
+    # Upload service account key
+    json_key = st.file_uploader("Upload your Google Sheets service account key (.json)", type="json", key="time_series_key")
+    
+    if json_key is not None:
+        try:
+            import gspread
+            from oauth2client.service_account import ServiceAccountCredentials
+            from gspread_dataframe import get_as_dataframe
+            
+            # Save uploaded key to a temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp_file:
+                tmp_file.write(json_key.read())
+                tmp_file_path = tmp_file.name
+            
+            # Authenticate
+            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+            creds = ServiceAccountCredentials.from_json_keyfile_name(tmp_file_path, scope)
+            client = gspread.authorize(creds)
+
+            st.divider()
+            
+            # Sheet selection
+            sheet_name = st.text_input("Google Sheet Name:", value="Falcon_Search_Visibility_Data")
+            
+            if sheet_name and st.button("📊 Load Time Series Data"):
+                with st.spinner("Loading data from Google Sheets..."):
+                    try:
+                        sheet = client.open(sheet_name).sheet1
+                        df_ts = get_as_dataframe(sheet).dropna(how='all')
+                        df_ts = df_ts.dropna(axis=1, how='all')
+                        
+                        # Ensure Date column is datetime
+                        df_ts['Date'] = pd.to_datetime(df_ts['Date'])
+                        
+                        # Enhanced time series processing
+                        df_ts['Falcon_Mentioned'] = df_ts['Response'].str.contains('falcon', case=False, na=False)
+                        df_ts['Branded_Query'] = df_ts['Query'].str.contains('falcon', case=False, na=False)
+                        
+                        # Add enhanced analytics
+                        position_data = df_ts['Response'].apply(lambda x: analyze_position(x, "Falcon"))
+                        context_data = df_ts['Response'].apply(lambda x: analyze_context(x, "Falcon"))
+                        competitor_data = df_ts['Response'].apply(extract_competitors_detailed)
+                        
+                        df_ts['Position_Category'] = [p[0] for p in position_data]
+                        df_ts['Context_Type'] = [c[0] for c in context_data]
+                        df_ts['Context_Sentiment'] = [c[1] for c in context_data]
+                        df_ts['Competitors_Count'] = [len(c[0]) for c in competitor_data]
+                        
+                        # URL Citation
+                        df_ts["Falcon_URL_Cited"] = df_ts.get("Sources_Cited", "").str.contains("falconstructures.com", na=False, case=False)
+                        
+                        st.success(f"✅ Loaded {len(df_ts)} records from {len(df_ts['Date'].unique())} dates")
+                        
+                        # Historical comparison controls
+                        st.subheader("🔍 Historical Comparison Settings")
+                        
+                        col1, col2, col3 = st.columns(3)
+                        
+                        with col1:
+                            date_range = st.selectbox(
+                                "Time Period:",
+                                ["Last 7 days", "Last 30 days", "Last 90 days", "All time"],
+                                index=1
+                            )
+                            
+                        with col2:
+                            comparison_metric = st.selectbox(
+                                "Primary Metric:",
+                                ["Mention Rate", "First Position Rate", "Positive Context", "Citation Rate"],
+                                index=0
+                            )
+                            
+                        with col3:
+                            overlay_comparison = st.checkbox("Enable Period Comparison", value=True)
+                        
+                        # Filter data based on date range
+                        end_date = df_ts['Date'].max()
+                        if date_range == "Last 7 days":
+                            start_date = end_date - pd.Timedelta(days=7)
+                        elif date_range == "Last 30 days":
+                            start_date = end_date - pd.Timedelta(days=30)
+                        elif date_range == "Last 90 days":
+                            start_date = end_date - pd.Timedelta(days=90)
+                        else:
+                            start_date = df_ts['Date'].min()
+                        
+                        df_filtered = df_ts[df_ts['Date'] >= start_date].copy()
+                        
+                        # Enhanced Time Series Visualizations
+                        st.subheader("📊 Enhanced Performance Trends")
+                        
+                        # Multi-metric dashboard
+                        daily_metrics = df_filtered.groupby(['Date', 'Source']).agg({
+                            'Falcon_Mentioned': lambda x: (x.sum() / len(x) * 100),
+                            'Position_Category': lambda x: sum([1 for p in x if p == 'First Third']) / len(x) * 100,
+                            'Context_Type': lambda x: sum([1 for c in x if c == 'Positive']) / len(x) * 100,
+                            'Context_Sentiment': 'mean',
+                            'Falcon_URL_Cited': lambda x: (x.sum() / len(x) * 100),
+                            'Competitors_Count': 'mean'
+                        }).reset_index()
+                        
+                        daily_metrics.columns = [
+                            'Date', 'Source', 'Mention_Rate', 'First_Position_Rate', 
+                            'Positive_Context_Rate', 'Avg_Sentiment', 'Citation_Rate', 'Avg_Competitors'
+                        ]
+                        
+                        # Create comprehensive time series visualization
+                        fig = make_subplots(
+                            rows=3, cols=2,
+                            subplot_titles=(
+                                'Mention Rate Trends', 'Position Performance', 
+                                'Context Analysis', 'Citation Rates',
+                                'Sentiment Trends', 'Competitive Density'
+                            ),
+                            vertical_spacing=0.08
+                        )
+                        
+                        sources = daily_metrics['Source'].unique()
+                        colors = px.colors.qualitative.Set1[:len(sources)]
+                        
+                        for i, source in enumerate(sources):
+                            source_data = daily_metrics[daily_metrics['Source'] == source]
+                            
+                            # Mention Rate
+                            fig.add_trace(
+                                go.Scatter(x=source_data['Date'], y=source_data['Mention_Rate'],
+                                          name=f'{source} Mention Rate', line=dict(color=colors[i]),
+                                          showlegend=True if i == 0 else False),
+                                row=1, col=1
+                            )
+                            
+                            # First Position Rate
+                            fig.add_trace(
+                                go.Scatter(x=source_data['Date'], y=source_data['First_Position_Rate'],
+                                          name=f'{source} First Position', line=dict(color=colors[i], dash='dash'),
+                                          showlegend=False),
+                                row=1, col=2
+                            )
+                            
+                            # Positive Context Rate
+                            fig.add_trace(
+                                go.Scatter(x=source_data['Date'], y=source_data['Positive_Context_Rate'],
+                                          name=f'{source} Positive Context', line=dict(color=colors[i], dash='dot'),
+                                          showlegend=False),
+                                row=2, col=1
+                            )
+                            
+                            # Citation Rate
+                            fig.add_trace(
+                                go.Scatter(x=source_data['Date'], y=source_data['Citation_Rate'],
+                                          name=f'{source} Citations', line=dict(color=colors[i], dash='dashdot'),
+                                          showlegend=False),
+                                row=2, col=2
+                            )
+                            
+                            # Sentiment
+                            fig.add_trace(
+                                go.Scatter(x=source_data['Date'], y=source_data['Avg_Sentiment'],
+                                          name=f'{source} Sentiment', line=dict(color=colors[i]),
+                                          showlegend=False),
+                                row=3, col=1
+                            )
+                            
+                            # Competitors
+                            fig.add_trace(
+                                go.Scatter(x=source_data['Date'], y=source_data['Avg_Competitors'],
+                                          name=f'{source} Competitors', line=dict(color=colors[i]),
+                                          showlegend=False),
+                                row=3, col=2
+                            )
+                        
+                        fig.update_layout(height=1000, title_text="Comprehensive Time Series Analysis")
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Period-over-period comparison
+                        if overlay_comparison:
+                            st.subheader("📈 Period-over-Period Comparison")
+                            
+                            # Calculate current vs previous period
+                            period_days = (end_date - start_date).days
+                            previous_start = start_date - pd.Timedelta(days=period_days)
+                            previous_end = start_date
+                            
+                            current_period = df_ts[df_ts['Date'] >= start_date]
+                            previous_period = df_ts[
+                                (df_ts['Date'] >= previous_start) & (df_ts['Date'] < previous_end)
+                            ]
+                            
+                            if len(previous_period) > 0:
+                                # Calculate metrics for both periods
+                                def calculate_period_metrics(data):
+                                    return {
+                                        'mention_rate': (data['Falcon_Mentioned'].sum() / len(data) * 100) if len(data) > 0 else 0,
+                                        'first_position_rate': sum([1 for _, row in data.iterrows() if analyze_position(row['Response'], "Falcon")[0] == 'First Third']) / len(data) * 100,
+                                        'positive_context_rate': sum([1 for _, row in data.iterrows() if analyze_context(row['Response'], "Falcon")[0] == 'Positive']) / len(data) * 100,
+                                        'avg_sentiment': np.mean([analyze_context(row['Response'], "Falcon")[1] for _, row in data.iterrows()]),
+                                    }
+                                
+                                current_metrics = calculate_period_metrics(current_period)
+                                previous_metrics = calculate_period_metrics(previous_period)
+                                
+                                # Display comparison
+                                col1, col2, col3, col4 = st.columns(4)
+                                
+                                metrics_comparison = [
+                                    ("Mention Rate", "mention_rate", "%"),
+                                    ("First Position", "first_position_rate", "%"),
+                                    ("Positive Context", "positive_context_rate", "%"),
+                                    ("Avg Sentiment", "avg_sentiment", "")
+                                ]
+                                
+                                for col, (label, key, suffix) in zip([col1, col2, col3, col4], metrics_comparison):
+                                    current_val = current_metrics[key]
+                                    previous_val = previous_metrics[key]
+                                    change = current_val - previous_val
+                                    change_pct = (change / previous_val * 100) if previous_val != 0 else 0
+                                    
+                                    col.metric(
+                                        label,
+                                        f"{current_val:.1f}{suffix}",
+                                        f"{change:+.1f}{suffix} ({change_pct:+.1f}%)"
+                                    )
+                        
+                        # Data export
+                        st.divider()
+                        
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            st.download_button(
+                                "📥 Download Time Series Data",
+                                daily_metrics.to_csv(index=False),
+                                f"time_series_analysis_{datetime.now().strftime('%Y%m%d')}.csv",
+                                "text/csv"
+                            )
+                        
+                        with col2:
+                            # Generate insights report
+                            insights = []
+                            
+                            latest_data = daily_metrics[daily_metrics['Date'] == daily_metrics['Date'].max()]
+                            avg_mention_rate = latest_data['Mention_Rate'].mean()
+                            
+                            if avg_mention_rate > 70:
+                                insights.append("🟢 Strong overall mention rate performance")
+                            elif avg_mention_rate > 50:
+                                insights.append("🟡 Moderate mention rate - room for improvement")
+                            else:
+                                insights.append("🔴 Low mention rate - requires immediate attention")
+                            
+                            # Trend analysis
+                            if len(daily_metrics) > 7:
+                                recent_trend = daily_metrics.tail(7)['Mention_Rate'].mean()
+                                older_trend = daily_metrics.head(7)['Mention_Rate'].mean()
+                                
+                                if recent_trend > older_trend * 1.1:
+                                    insights.append("📈 Positive trend in recent performance")
+                                elif recent_trend < older_trend * 0.9:
+                                    insights.append("📉 Declining trend detected")
+                                else:
+                                    insights.append("➡️ Stable performance trend")
+                            
+                            insights_text = "\n".join(insights)
+                            
+                            st.download_button(
+                                "💡 Download Insights Report",
+                                f"Time Series Analysis Insights\n{'='*40}\n{insights_text}\n\nGenerated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                                f"insights_report_{datetime.now().strftime('%Y%m%d')}.txt",
+                                "text/plain"
+                            )
+                        
+                    except Exception as e:
+                        st.error(f"Error loading Google Sheets data: {e}")
+                        st.info("Please ensure the sheet name is correct and you have proper access permissions.")
+            
+        except ImportError:
+            st.error("Required packages for Google Sheets integration are not installed.")
+            st.info("Install them with: pip install gspread oauth2client gspread-dataframe")
+    
+    else:
+        st.info("⬆️ Upload your Google Sheets service account JSON file to begin time series analysis.")
+        
+        # Show sample time series visualization with dummy data
+        st.subheader("📊 Sample Time Series Visualization")
+        st.caption("This is how your time series analysis will look once you upload your data:")
+        
+        # Create sample data for demonstration
+        sample_dates = pd.date_range(start='2024-01-01', end='2024-12-31', freq='W')
+        sample_data = []
+        
+        for date in sample_dates:
+            for source in ['OpenAI', 'Gemini', 'Perplexity']:
+                # Generate realistic sample data with trends
+                base_rate = 45 + np.random.normal(0, 10)
+                seasonal_factor = 5 * np.sin((date.dayofyear / 365) * 2 * np.pi)
+                mention_rate = max(0, min(100, base_rate + seasonal_factor))
+                
+                sample_data.append({
+                    'Date': date,
+                    'Source': source,
+                    'Mention_Rate': mention_rate,
+                    'First_Position_Rate': mention_rate * 0.6 + np.random.normal(0, 5),
+                    'Positive_Context_Rate': mention_rate * 0.8 + np.random.normal(0, 3),
+                    'Citation_Rate': mention_rate * 0.4 + np.random.normal(0, 8)
+                })
+        
+        sample_df = pd.DataFrame(sample_data)
+        
+        # Create sample visualization
+        fig = px.line(sample_df, x='Date', y='Mention_Rate', color='Source',
+                      title='Sample: Falcon Mention Rate Trends Over Time')
+        fig.update_layout(yaxis_title="Mention Rate (%)", height=400)
+        st.plotly_chart(fig, use_container_width=True)
+
+
+# ─── ADDITIONAL UTILITY FUNCTIONS ─────────────────────────────────────────────
+
+def generate_executive_summary(df):
+    """Generate an automated executive summary"""
+    
+    total_queries = len(df)
+    mention_rate = df['Falcon_Mentioned'].sum() / total_queries * 100 if total_queries > 0 else 0
+    
+    # Position analysis
+    position_data = df['Response'].apply(lambda x: analyze_position(x, "Falcon"))
+    first_third_rate = sum([1 for p in position_data if p[0] == 'First Third']) / total_queries * 100
+    
+    # Context analysis  
+    context_data = df['Response'].apply(lambda x: analyze_context(x, "Falcon"))
+    positive_context_rate = sum([1 for c in context_data if c[0] == 'Positive']) / total_queries * 100
+    
+    # Competitive analysis
+    competitor_data = df['Response'].apply(extract_competitors_detailed)
+    avg_competitors = np.mean([len(c[0]) for c in competitor_data])
+    
+    # Generate summary text
+    summary = f"""
+    FALCON STRUCTURES - LLM SEARCH VISIBILITY EXECUTIVE SUMMARY
+    ===========================================================
+    
+    OVERALL PERFORMANCE
+    • Total Queries Analyzed: {total_queries:,}
+    • Overall Mention Rate: {mention_rate:.1f}%
+    • First Position Rate: {first_third_rate:.1f}%
+    • Positive Context Rate: {positive_context_rate:.1f}%
+    • Average Competitors per Query: {avg_competitors:.1f}
+    
+    PERFORMANCE GRADE: {'A+' if mention_rate > 80 else 'A' if mention_rate > 70 else 'B+' if mention_rate > 60 else 'B' if mention_rate > 50 else 'C+' if mention_rate > 40 else 'C' if mention_rate > 30 else 'D'}
+    
+    KEY INSIGHTS
+    {'• Excellent brand visibility across all LLMs' if mention_rate > 70 else '• Good brand recognition with room for improvement' if mention_rate > 50 else '• Brand visibility needs significant improvement'}
+    {'• Strong positioning when mentioned' if first_third_rate > 50 else '• Moderate positioning performance' if first_third_rate > 30 else '• Poor positioning - often mentioned later in responses'}
+    {'• Positive brand sentiment overall' if positive_context_rate > 60 else '• Mixed brand sentiment' if positive_context_rate > 40 else '• Concerning negative sentiment patterns'}
+    {'• Highly competitive query landscape' if avg_competitors > 3 else '• Moderately competitive environment' if avg_competitors > 2 else '• Low competitive density - opportunity for dominance'}
+    
+    TOP RECOMMENDATIONS
+    {generate_recommendations(mention_rate, first_third_rate, positive_context_rate, avg_competitors)}
+    
+    Generated: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
+    """
+    
+    return summary
+
+def generate_recommendations(mention_rate, first_third_rate, positive_context_rate, avg_competitors):
+    """Generate specific recommendations based on performance metrics"""
+    
+    recommendations = []
+    
+    if mention_rate < 50:
+        recommendations.append("1. CRITICAL: Implement comprehensive SEO and content marketing strategy")
+        recommendations.append("2. Focus on thought leadership content in modular construction space")
+    elif mention_rate < 70:
+        recommendations.append("1. Strengthen brand visibility through targeted content optimization")
+        recommendations.append("2. Increase industry publication presence and citations")
+    
+    if first_third_rate < 40:
+        recommendations.append("3. Optimize content structure for earlier brand mentions")
+        recommendations.append("4. Develop stronger value proposition statements")
+    
+    if positive_context_rate < 60:
+        recommendations.append("5. Review and improve brand messaging and positioning")
+        recommendations.append("6. Address any negative sentiment drivers identified")
+    
+    if avg_competitors > 3:
+        recommendations.append("7. Develop competitive differentiation strategy")
+        recommendations.append("8. Focus on unique value propositions and market positioning")
+    
+    if not recommendations:
+        recommendations.append("1. Maintain current high-performance strategies")
+        recommendations.append("2. Continue monitoring for competitive threats")
+        recommendations.append("3. Explore expansion into new query categories")
+    
+    return "\n    ".join(recommendations)
+
+
+# ─── SESSION STATE MANAGEMENT ─────────────────────────────────────────────────
+
+# Initialize session state variables
+if 'template_query' not in st.session_state:
+    st.session_state.template_query = ''
+
+if 'run_triggered' not in st.session_state:
+    st.session_state.run_triggered = False
+
+if 'first_visit' not in st.session_state:
+    st.session_state.first_visit = True
 
 # ─── FOOTER ─────────────────────────────────────────────────────────────────────
 
@@ -1492,7 +1497,7 @@ st.markdown("""
     <p>Powered by OpenAI, Google Gemini, and Perplexity AI</p>
     <p style='font-size:0.8rem; margin-top:1rem;'>
         Created by <a href='https://www.weidert.com' target='_blank' style='color:#666;'>Weidert Group, Inc.</a>
-        | Version 3.0 Enhanced
+        | Version 2.0 Enhanced
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -1504,13 +1509,13 @@ with st.sidebar:
     st.subheader("💡 Pro Tips")
     
     tips = [
-        "**Predefined Queries**: Use the 20-query set for comprehensive analysis",
-        "**Cross-Tab Data**: Results from Tab 1 can be used in other tabs",
-        "**Brand vs Non-Brand**: Compare performance on branded vs generic queries",
-        "**URL Citations**: Track how often your website is referenced",
-        "**Competitor Gaps**: Find queries where competitors appear but you don't",
-        "**Time Series**: Upload historical data to track trends over time",
-        "**Executive View**: Dashboard provides high-level insights for stakeholders"
+        "**Query Templates**: Use the built-in templates to get started quickly",
+        "**A/B Testing**: Try different phrasings of the same query to optimize results", 
+        "**Position Tracking**: Monitor where Falcon appears in responses for optimization opportunities",
+        "**Context Analysis**: Pay attention to positive vs negative mention contexts",
+        "**Competitor Comparison**: Use side-by-side analysis to understand competitive landscape",
+        "**Executive Dashboard**: Perfect for stakeholder reporting and strategic planning",
+        "**Time Series**: Track performance changes over time to measure improvement"
     ]
     
     for tip in tips:
@@ -1532,20 +1537,62 @@ with st.sidebar:
         - Batch Size: {batch_size}
         """)
 
-# ─── SESSION STATE MANAGEMENT ─────────────────────────────────────────────────
+# ─── ERROR HANDLING & LOGGING ─────────────────────────────────────────────────
 
-# Initialize session state variables
-if 'template_query' not in st.session_state:
-    st.session_state.template_query = ''
+def log_error(error_type, error_message, query=None):
+    """Simple error logging function"""
+    timestamp = datetime.now().isoformat()
+    log_entry = f"[{timestamp}] {error_type}: {error_message}"
+    if query:
+        log_entry += f" | Query: {query}"
+    
+    # In a production environment, you might want to log to a file or external service
+    print(log_entry)  # For now, just print to console
 
-if 'run_triggered' not in st.session_state:
-    st.session_state.run_triggered = False
+# ─── PERFORMANCE MONITORING ─────────────────────────────────────────────────
 
-if 'first_visit' not in st.session_state:
-    st.session_state.first_visit = True
+class PerformanceMonitor:
+    def __init__(self):
+        self.start_time = None
+        self.metrics = {}
+    
+    def start_timing(self, operation):
+        self.start_time = time.time()
+        self.metrics[operation] = {'start': self.start_time}
+    
+    def end_timing(self, operation):
+        if operation in self.metrics and 'start' in self.metrics[operation]:
+            end_time = time.time()
+            duration = end_time - self.metrics[operation]['start']
+            self.metrics[operation]['duration'] = duration
+            return duration
+        return None
+    
+    def get_summary(self):
+        summary = {}
+        for operation, data in self.metrics.items():
+            if 'duration' in data:
+                summary[operation] = f"{data['duration']:.2f}s"
+        return summary
 
-if 'use_predefined' not in st.session_state:
-    st.session_state.use_predefined = False
+# Initialize performance monitor
+perf_monitor = PerformanceMonitor()
 
-if 'latest_results' not in st.session_state:
-    st.session_state.latest_results = None
+# ─── FINAL CLEANUP ─────────────────────────────────────────────────────────────
+
+# Clean up temporary files if they exist
+import atexit
+import os
+
+def cleanup_temp_files():
+    # Clean up any temporary files created during execution
+    temp_files = getattr(cleanup_temp_files, 'files', [])
+    for file_path in temp_files:
+        try:
+            if os.path.exists(file_path):
+                os.unlink(file_path)
+        except:
+            pass
+
+cleanup_temp_files.files = []
+atexit.register(cleanup_temp_files)
