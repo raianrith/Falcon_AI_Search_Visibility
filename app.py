@@ -677,6 +677,9 @@ with tab2:
     
     uploaded = st.file_uploader("Upload your results CSV", type="csv", key="visibility_upload")
     
+    # Initialize df_main
+    df_main = None
+    
     # Check if we have results from Tab 1
     if 'latest_results' in st.session_state:
         use_latest = st.checkbox("Use results from Multi-LLM Response Generator", value=True)
@@ -684,9 +687,7 @@ with tab2:
             df_main = st.session_state.latest_results.copy()
     elif uploaded:
         df_main = pd.read_csv(uploaded)
-    else:
-        df_main = None
-
+    
     if df_main is not None:
         # Enhanced data processing
         pattern = re.compile(r'\b(' + '|'.join(re.escape(c) for c in COMPETITORS) + r')\b', flags=re.IGNORECASE)
@@ -1159,15 +1160,18 @@ with tab4:
         # File upload for dashboard
         dashboard_file = st.file_uploader("Upload analysis results for dashboard", type="csv", key="dashboard_upload")
         
+        # Initialize df_dashboard
+        df_dashboard = None
+        
         # Check for latest results from Tab 1
         if 'latest_results' in st.session_state:
             use_latest_dash = st.checkbox("Use results from Multi-LLM Response Generator", value=True, key="dash_use_latest")
             if use_latest_dash:
                 df_dashboard = st.session_state.latest_results.copy()
-        elif dashboard_file:
+        
+        # Check if file was uploaded
+        if dashboard_file and df_dashboard is None:
             df_dashboard = pd.read_csv(dashboard_file)
-        else:
-            df_dashboard = None
         
         if df_dashboard is not None:
             # Ensure we have the necessary columns
